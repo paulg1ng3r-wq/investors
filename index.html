@@ -462,7 +462,7 @@ STOCKS.forEach(s=>{if(!S.stocks[s.id])S.stocks[s.id]={amount:0,avgBuyPrice:s.bas
 let tickCount=0;
 
 function fmt(n){if(n>=1e9)return'€'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'€'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'€'+(n/1e3).toFixed(1)+'K';if(S.money<1000)return'€'+n.toFixed(2);return'€'+n.toFixed(0);}
-function workerEff(slot){const d=S.ownedSlots[slot];if(!d)return 1;const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;if(w===0)return 0.4;return 0.4+0.6*Math.min(1,w/needed);}
+function workerEff(slot){const d=S.ownedSlots[slot];if(!d)return 1;const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=neededWorkers(b,d.level);const w=d.workers||0;if(w===0)return 0.4;return 0.4+0.6*Math.min(1,w/needed);}
 function slotIncome(slot){const d=S.ownedSlots[slot];if(!d)return 0;const b=BUILDINGS.find(x=>x.id===d.buildingId);let base=b.income*Math.pow(d.level,1.5)*workerEff(slot);if(d.damaged)base*=0.5;if(S.activeEvents.strike)base*=0.4;if(S.activeEvents.recession)base*=0.6;if(S.activeEvents.boom)base*=1.8;return base;}
 function getTotalIncome(){let t=0;for(const k in S.ownedSlots)t+=slotIncome(k);STOCKS.forEach(s=>{if(S.takenOver[s.id])t+=s.dividend*10;});return t;}
 function getWorkerCost(){let c=0;for(const k in S.ownedSlots)c+=(S.ownedSlots[k].workers||0)*0.1;return c;}
@@ -472,7 +472,8 @@ function getDividend(){let d=0;STOCKS.forEach(s=>{if(s.dividend>0)d+=S.stocks[s.
 function getTotalDebt(){return S.loans.reduce((a,l)=>a+l.remaining,0);}
 function getPortfolio(){let v=0;STOCKS.forEach(s=>v+=S.stocks[s.id].amount*S.stockPrices[s.id]);return v;}
 function upgradePrice(b,lv){return Math.round(b.price*Math.pow(b.upgradeMult,lv)*0.6);}
-function hireCost(b,lv){return Math.round(b.price*0.15*lv);}
+function hireCost(b,lv){return Math.round(b.price*0.1*Math.max(1,lv));}
+function neededWorkers(b,lv){return Math.ceil(b.maxWorkers*(lv*0.5+0.5));}
 function ownership(id){const s=STOCKS.find(x=>x.id===id);return S.stocks[id].amount/s.totalShares;}
 
 function updateHUD(){
@@ -653,7 +654,7 @@ function openModal(slot,building,isOwned,level){
   document.getElementById('modal-desc').textContent=building.desc;
   const ws=document.getElementById('modal-workers');
   if(isOwned){
-    const d=S.ownedSlots[slot];const needed=Math.ceil(building.maxWorkers*(level*0.6+0.4));const w=d.workers||0;const pct=needed>0?Math.round(w/needed*100):100;
+    const d=S.ownedSlots[slot];const needed=neededWorkers(building,level);const w=d.workers||0;const pct=needed>0?Math.round(w/needed*100):100;
     ws.style.display='';
     document.getElementById('worker-info-text').textContent=`${w} / ${needed} werknemers`;
     document.getElementById('worker-fill').style.width=pct+'%';
@@ -683,7 +684,7 @@ function updateModalButtons(){
   if(mOwned){
     const upCost=upgradePrice(mBuilding,mLevel);
     const d=S.ownedSlots[mSlot];if(!d)return;
-    const needed=Math.ceil(mBuilding.maxWorkers*(mLevel*0.6+0.4));const w=d.workers||0;
+    const needed=neededWorkers(mBuilding,mLevel);const w=d.workers||0;
     const hc=hireCost(mBuilding,mLevel);
     const ub=document.getElementById('mbtn-upgrade');if(ub){ub.disabled=S.money<upCost;ub.textContent='⬆️ Upgrade '+fmt(upCost);}
     const hb=document.getElementById('mbtn-hire');if(hb){hb.disabled=S.money<hc||w>=needed;hb.textContent='👷 Huren '+fmt(hc);}
@@ -695,27 +696,34 @@ function updateModalButtons(){
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function confirmBuy(){if(S.money<mBuilding.price)return;S.money-=mBuilding.price;S.ownedSlots[mSlot]={buildingId:mBuilding.id,level:1,workers:0,damaged:false};closeModal();showToast('✅ '+mBuilding.name+' gekocht!');renderCity();renderMyBiz();updateHUD();}
 function confirmUpgrade(){const cost=upgradePrice(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;S.ownedSlots[mSlot].level++;mLevel++;showToast('⬆️ '+mBuilding.name+' → Level '+S.ownedSlots[mSlot].level+'!');renderCity();renderMyBiz();updateHUD();updateModalButtons();}
-function confirmHire(){const d=S.ownedSlots[mSlot];const needed=Math.ceil(mBuilding.maxWorkers*(mLevel*0.6+0.4));const w=d.workers||0;if(w>=needed)return;const cost=hireCost(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;d.workers=w+1;closeModal();showToast('👷 Werknemer aangenomen bij '+mBuilding.name+'!');renderCity();renderMyBiz();updateHUD();}
+function confirmHire(){const d=S.ownedSlots[mSlot];const needed=neededWorkers(mBuilding,mLevel);const w=d.workers||0;if(w>=needed)return;const cost=hireCost(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;d.workers=w+1;closeModal();showToast('👷 Werknemer aangenomen bij '+mBuilding.name+'!');renderCity();renderMyBiz();updateHUD();}
 function confirmSell(){const d=S.ownedSlots[mSlot];if(!d)return;const b=BUILDINGS.find(x=>x.id===d.buildingId);const refund=Math.round(b.price*0.5*d.level);if(!confirm(`${b.name} verkopen voor ${fmt(refund)}? (50% terugwaarde)`))return;S.money+=refund;delete S.ownedSlots[mSlot];closeModal();showToast('💸 '+b.name+' verkocht voor '+fmt(refund)+'!');renderCity();renderMyBiz();updateHUD();}
 
 function renderMyBiz(){
   const g=document.getElementById('mybiz-grid');const owned=Object.entries(S.ownedSlots);
   if(!owned.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="es-emoji">🏗️</div><p>Ga naar de Stad kaart!</p></div>`;return;}
   g.innerHTML=owned.map(([slot,d])=>{
-    const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;const hc=hireCost(b,d.level);const eff=Math.round(workerEff(slot)*100);const prog=Math.min(100,S.money/cost*100);
-    return`<div class="mybiz-card${d.damaged?' damaged':''}"><div class="mybiz-top"><span class="mybiz-emoji">${d.damaged?'🔥':b.emoji}</span><div><div class="mybiz-name">${b.name}</div><div class="mybiz-level">LEVEL ${d.level}</div></div></div><div class="mybiz-stat"><span>Inkomen</span><span id="mb-inc-${slot}">${fmt(slotIncome(slot))}/s</span></div><div class="mybiz-stat"><span>Werknemers</span><span>${w}/${needed}</span></div><div class="mybiz-stat"><span>Efficiëntie</span><span id="mb-eff-${slot}">${eff}%</span></div><div class="mybiz-stat"><span>Upgrade kost</span><span>${fmt(cost)}</span></div><div class="progress-bar"><div class="progress-fill" id="mb-prog-${slot}" style="width:${prog}%"></div></div><div class="mybiz-btns"><button class="btn-sm btn-sm-up" ${S.money<cost?'disabled':''} onclick="doUpgrade(${slot})">⬆️ ${fmt(cost)}</button><button class="btn-sm btn-sm-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="doHire(${slot})">👷 ${fmt(hc)}</button></div></div>`;
+    const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);const needed=neededWorkers(b,d.level);const w=d.workers||0;const hc=hireCost(b,d.level);const eff=Math.round(workerEff(slot)*100);const prog=Math.min(100,S.money/cost*100);
+    return`<div class="mybiz-card${d.damaged?' damaged':''}"><div class="mybiz-top"><span class="mybiz-emoji">${d.damaged?'🔥':b.emoji}</span><div><div class="mybiz-name">${b.name}</div><div class="mybiz-level">LEVEL ${d.level}</div></div></div><div class="mybiz-stat"><span>Inkomen</span><span id="mb-inc-${slot}">${fmt(slotIncome(slot))}/s</span></div><div class="mybiz-stat"><span>Werknemers</span><span>${w}/${needed}</span></div><div class="mybiz-stat"><span>Efficiëntie</span><span id="mb-eff-${slot}">${eff}%</span></div><div class="mybiz-stat"><span>Upgrade kost</span><span>${fmt(cost)}</span></div><div class="progress-bar"><div class="progress-fill" id="mb-prog-${slot}" style="width:${prog}%"></div></div><div class="mybiz-btns"><button id="mb-up-${slot}" class="btn-sm btn-sm-up" ${S.money<cost?'disabled':''} onclick="doUpgrade(${slot})">⬆️ ${fmt(cost)}</button><button id="mb-hi-${slot}" class="btn-sm btn-sm-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="doHire(${slot})">👷 ${fmt(hc)}</button></div></div>`;
   }).join('');
 }
 function tickUpdateMyBiz(){
   for(const slot in S.ownedSlots){
-    const cost=upgradePrice(BUILDINGS.find(x=>x.id===S.ownedSlots[slot].buildingId),S.ownedSlots[slot].level);
+    const d=S.ownedSlots[slot];
+    const b=BUILDINGS.find(x=>x.id===d.buildingId);
+    const cost=upgradePrice(b,d.level);
+    const hc=hireCost(b,d.level);
+    const needed=neededWorkers(b,d.level);
+    const w=d.workers||0;
     const inc=document.getElementById('mb-inc-'+slot);if(inc)inc.textContent=fmt(slotIncome(slot))+'/s';
     const eff=document.getElementById('mb-eff-'+slot);if(eff)eff.textContent=Math.round(workerEff(slot)*100)+'%';
     const prog=document.getElementById('mb-prog-'+slot);if(prog)prog.style.width=Math.min(100,S.money/cost*100)+'%';
+    const upBtn=document.getElementById('mb-up-'+slot);if(upBtn)upBtn.disabled=S.money<cost;
+    const hiBtn=document.getElementById('mb-hi-'+slot);if(hiBtn)hiBtn.disabled=S.money<hc||w>=needed;
   }
 }
 function doUpgrade(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);if(S.money<cost)return;S.money-=cost;d.level++;showToast('⬆️ '+b.name+' → Level '+d.level+'!');renderCity();renderMyBiz();updateHUD();}
-function doHire(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));if((d.workers||0)>=needed)return;const cost=hireCost(b,d.level);if(S.money<cost)return;S.money-=cost;d.workers=(d.workers||0)+1;showToast('👷 Werknemer aangenomen bij '+b.name+'!');renderCity();renderMyBiz();updateHUD();}
+function doHire(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=neededWorkers(b,d.level);if((d.workers||0)>=needed)return;const cost=hireCost(b,d.level);if(S.money<cost)return;S.money-=cost;d.workers=(d.workers||0)+1;showToast('👷 Werknemer aangenomen bij '+b.name+'!');renderCity();renderMyBiz();updateHUD();}
 
 function renderInvest(){
   const g=document.getElementById('invest-grid');
