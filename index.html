@@ -316,7 +316,29 @@ main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-wid
         </div>
       </div>
       <div class="panel">
-        <div class="panel-title">🔔 Meldingen</div>
+        <div class="panel-title">🌍 Taal / Language</div>
+        <div style="display:flex;gap:8px">
+          <button class="speed-btn active-speed" id="lang-nl" onclick="setLang('nl')">🇳🇱 Nederlands</button>
+          <button class="speed-btn" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">👤 Spelernaam</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="player-name" type="text" maxlength="20" placeholder="Jouw naam..." value="" style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:8px 12px"/>
+          <button onclick="saveName()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--accent);color:#000;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Opslaan</button>
+        </div>
+        <div id="name-display" style="font-size:12px;color:var(--text-dim);margin-top:6px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🎯 Moeilijkheidsgraad</div>
+        <div style="display:flex;gap:8px">
+          <button class="speed-btn" id="diff-easy" onclick="setDifficulty('easy')">😊 Makkelijk</button>
+          <button class="speed-btn active-speed" id="diff-normal" onclick="setDifficulty('normal')">😐 Normaal</button>
+          <button class="speed-btn" id="diff-hard" onclick="setDifficulty('hard')">💀 Moeilijk</button>
+        </div>
+        <div id="diff-desc" style="font-size:11px;color:var(--text-dim);margin-top:8px">Normale belasting, normale events.</div>
+      </div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
             <input type="checkbox" id="notif-events" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Random events tonen
@@ -327,10 +349,17 @@ main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-wid
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
             <input type="checkbox" id="notif-toast" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Toast meldingen tonen
           </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="autosave-on" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Automatisch opslaan
+          </label>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-title">⚠️ Spel Resetten</div>
+        <div class="panel-title">⚠️ Spel Resetten & Opslaan</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <button onclick="downloadSave()" style="padding:9px 16px;border:none;border-radius:8px;background:var(--accent);color:#000;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 Save Downloaden</button>
+          <label style="padding:9px 16px;border:none;border-radius:8px;background:var(--accent2);color:#000;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer">📂 Save Uploaden<input type="file" accept=".json" onchange="uploadSave(event)" style="display:none"/></label>
+        </div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px">Dit verwijdert al je voortgang!</div>
         <button onclick="resetGame()" style="padding:9px 20px;border:none;border-radius:8px;background:var(--red);color:#fff;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🗑️ Spel Resetten</button>
       </div>
@@ -423,7 +452,7 @@ let S=DEFAULT_STATE();
 STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
 
 // Laad opgeslagen voortgang
-function saveGame(){try{localStorage.setItem('citytycoon_save',JSON.stringify({money:S.money,ownedSlots:S.ownedSlots,stocks:S.stocks,stockPrices:S.stockPrices,stockHistory:S.stockHistory,takenOver:S.takenOver,loans:S.loans,nextLoanId:S.nextLoanId,taxRate:S.taxRate,totalDividendEarned:S.totalDividendEarned}));}catch(e){}}
+function saveGame(){if(!notifEnabled('autosave-on'))return;try{localStorage.setItem('citytycoon_save',JSON.stringify({money:S.money,ownedSlots:S.ownedSlots,stocks:S.stocks,stockPrices:S.stockPrices,stockHistory:S.stockHistory,takenOver:S.takenOver,loans:S.loans,nextLoanId:S.nextLoanId,taxRate:S.taxRate,totalDividendEarned:S.totalDividendEarned}));}catch(e){}}
 function loadGame(){try{const raw=localStorage.getItem('citytycoon_save');if(!raw)return false;const saved=JSON.parse(raw);Object.assign(S,saved);// zorg dat alle stocks bestaan
 STOCKS.forEach(s=>{if(!S.stocks[s.id])S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};if(!S.stockPrices[s.id])S.stockPrices[s.id]=s.basePrice;if(!S.stockHistory[s.id])S.stockHistory[s.id]=[s.basePrice];if(S.takenOver[s.id]===undefined)S.takenOver[s.id]=false;});return true;}catch(e){return false;}}
 
@@ -487,7 +516,87 @@ function setSpeed(s){
   gameInterval=setInterval(gameTick,ms);
 }
 
-function saveSettings(){} // checkboxes worden live gelezen
+// ── TAAL ─────────────────────────────────────
+const LANG={
+  nl:{money:'💰 Geld',income:'📈 Netto/sec',companies:'🏢 Bedrijven',portfolio:'📊 Portfolio',debt:'🏦 Schuld',tax:'🧾 Belasting',
+      tabCity:'🏙️ Stad',tabBiz:'🏢 Mijn Bedrijven',tabInvest:'📈 Investeren',tabLoans:'🏦 Leningen',tabSettings:'⚙️ Instellingen',
+      buy:'💰 Kopen',upgrade:'⬆️ Upgrade',hire:'👷 Huren',sell:'💸 Verkopen',cancel:'✕',
+      workers:'👷 Medewerkers',cityMap:'🗺️ Stad Kaart — klik een gebouw',
+      repayAll:'Alles aflossen',autoSec:'Auto/sec',newLoan:'Lening Afsluiten',
+      resetConfirm:'Weet je het zeker? Al je voortgang gaat verloren!',
+      sellConfirm:'verkopen voor',sellConfirm2:'(50% terugwaarde)',
+      saved:'Opgeslagen!',loaded:'Save geladen!',reset:'🔄 Spel gereset!'},
+  en:{money:'💰 Money',income:'📈 Net/sec',companies:'🏢 Businesses',portfolio:'📊 Portfolio',debt:'🏦 Debt',tax:'🧾 Tax',
+      tabCity:'🏙️ City',tabBiz:'🏢 My Businesses',tabInvest:'📈 Invest',tabLoans:'🏦 Loans',tabSettings:'⚙️ Settings',
+      buy:'💰 Buy',upgrade:'⬆️ Upgrade',hire:'👷 Hire',sell:'💸 Sell',cancel:'✕',
+      workers:'👷 Staff',cityMap:'🗺️ City Map — click a building',
+      repayAll:'Repay all',autoSec:'Auto/sec',newLoan:'Take Loan',
+      resetConfirm:'Are you sure? All progress will be lost!',
+      sellConfirm:'sell for',sellConfirm2:'(50% refund)',
+      saved:'Saved!',loaded:'Save loaded!',reset:'🔄 Game reset!'},
+};
+let lang='nl';
+function setLang(l){
+  lang=l;
+  localStorage.setItem('citytycoon_lang',l);
+  document.querySelectorAll('[id^=lang-]').forEach(b=>b.classList.remove('active-speed'));
+  const btn=document.getElementById('lang-'+l);if(btn)btn.classList.add('active-speed');
+  const T=LANG[l];
+  // HUD labels
+  const labels=document.querySelectorAll('.hud-label');
+  const keys=['money','income','companies','portfolio','debt','tax'];
+  labels.forEach((el,i)=>{if(keys[i])el.textContent=T[keys[i]];});
+  // Tabs
+  const tabs=document.querySelectorAll('.tab');
+  const tabKeys=['tabCity','tabBiz','tabInvest','tabLoans','tabSettings'];
+  tabs.forEach((el,i)=>{if(tabKeys[i])el.textContent=T[tabKeys[i]];});
+  // City map title
+  const cm=document.querySelector('.panel-title');if(cm)cm.textContent=T.cityMap;
+}
+function loadLang(){const l=localStorage.getItem('citytycoon_lang')||'nl';setLang(l);}
+
+// ── SAVE DOWNLOAD / UPLOAD ────────────────────
+function downloadSave(){
+  const data=JSON.stringify({money:S.money,ownedSlots:S.ownedSlots,stocks:S.stocks,stockPrices:S.stockPrices,stockHistory:S.stockHistory,takenOver:S.takenOver,loans:S.loans,nextLoanId:S.nextLoanId,taxRate:S.taxRate,totalDividendEarned:S.totalDividendEarned,savedAt:new Date().toISOString()},null,2);
+  const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);a.download='citytycoon_save.json';a.click();
+  showToast('💾 Save gedownload!');
+}
+function uploadSave(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const saved=JSON.parse(e.target.result);
+      Object.assign(S,saved);
+      STOCKS.forEach(s=>{if(!S.stocks[s.id])S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};if(!S.stockPrices[s.id])S.stockPrices[s.id]=s.basePrice;if(!S.stockHistory[s.id])S.stockHistory[s.id]=[s.basePrice];if(S.takenOver[s.id]===undefined)S.takenOver[s.id]=false;});
+      renderCity();renderLoans();renderMyBiz();updateHUD();
+      showToast('📂 Save geladen!');
+    }catch(err){showToast('❌ Ongeldig save bestand!');}
+  };
+  reader.readAsText(file);
+  evt.target.value='';
+}
+function setDifficulty(d){
+  difficulty=d;
+  document.querySelectorAll('[id^=diff-]').forEach(b=>b.classList.remove('active-speed'));
+  const btn=document.getElementById('diff-'+d);if(btn)btn.classList.add('active-speed');
+  const desc={easy:'Minder belasting (10%), minder events, meer startgeld.',normal:'Normale belasting, normale events.',hard:'Hogere belasting (25%), meer events, minder startgeld.'};
+  const el=document.getElementById('diff-desc');if(el)el.textContent=desc[d]||'';
+  if(d==='easy')S.taxRate=Math.min(S.taxRate,0.10);
+  if(d==='hard')S.taxRate=Math.max(S.taxRate,0.25);
+}
+function saveName(){
+  const v=document.getElementById('player-name').value.trim();
+  if(!v)return;
+  localStorage.setItem('citytycoon_name',v);
+  const el=document.getElementById('name-display');if(el)el.textContent='Opgeslagen als: '+v;
+  showToast('👤 Naam opgeslagen: '+v+'!');
+}
+function loadName(){
+  const v=localStorage.getItem('citytycoon_name')||'';
+  const inp=document.getElementById('player-name');if(inp)inp.value=v;
+  const el=document.getElementById('name-display');if(el&&v)el.textContent='Huidig: '+v;
+}
 
 function resetGame(){
   if(!confirm('Weet je het zeker? Al je voortgang gaat verloren!'))return;
@@ -539,7 +648,7 @@ function openModal(slot,building,isOwned,level){
   document.getElementById('modal-emoji').textContent=building.emoji;
   document.getElementById('modal-title').textContent=building.name;
   document.getElementById('modal-desc').textContent=building.desc;
-  const ws=document.getElementById('modal-workers');const btns=document.getElementById('modal-buttons');
+  const ws=document.getElementById('modal-workers');
   if(isOwned){
     const d=S.ownedSlots[slot];const needed=Math.ceil(building.maxWorkers*(level*0.6+0.4));const w=d.workers||0;const pct=needed>0?Math.round(w/needed*100):100;
     ws.style.display='';
@@ -549,19 +658,42 @@ function openModal(slot,building,isOwned,level){
     const upCost=upgradePrice(building,level);const hc=hireCost(building,level);
     document.getElementById('modal-price').textContent=fmt(upCost);
     document.getElementById('modal-income').textContent=fmt(slotIncome(slot))+'/s';
-    btns.innerHTML=`<button class="btn btn-upgrade" ${S.money<upCost?'disabled':''} onclick="confirmUpgrade()">⬆️ Upgrade ${fmt(upCost)}</button><button class="btn btn-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="confirmHire()">👷 Huren ${fmt(hc)}</button><button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
+    document.getElementById('modal-buttons').innerHTML=
+      `<button class="btn btn-upgrade" id="mbtn-upgrade" onclick="confirmUpgrade()">⬆️ Upgrade ${fmt(upCost)}</button>`+
+      `<button class="btn btn-hire" id="mbtn-hire" onclick="confirmHire()">👷 Huren ${fmt(hc)}</button>`+
+      `<button class="btn" id="mbtn-sell" onclick="confirmSell()" style="background:var(--red);color:#fff">💸 Verkopen</button>`+
+      `<button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
   }else{
     ws.style.display='none';
     document.getElementById('modal-price').textContent=fmt(building.price);
     document.getElementById('modal-income').textContent=fmt(building.income)+'/s';
-    btns.innerHTML=`<button class="btn btn-buy" ${S.money<building.price?'disabled':''} onclick="confirmBuy()">💰 Kopen ${fmt(building.price)}</button><button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
+    document.getElementById('modal-buttons').innerHTML=
+      `<button class="btn btn-buy" id="mbtn-buy" onclick="confirmBuy()">💰 Kopen ${fmt(building.price)}</button>`+
+      `<button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
   }
+  updateModalButtons();
   document.getElementById('modal-overlay').classList.add('open');
 }
+
+function updateModalButtons(){
+  if(!document.getElementById('modal-overlay').classList.contains('open'))return;
+  if(mOwned){
+    const upCost=upgradePrice(mBuilding,mLevel);
+    const d=S.ownedSlots[mSlot];if(!d)return;
+    const needed=Math.ceil(mBuilding.maxWorkers*(mLevel*0.6+0.4));const w=d.workers||0;
+    const hc=hireCost(mBuilding,mLevel);
+    const ub=document.getElementById('mbtn-upgrade');if(ub){ub.disabled=S.money<upCost;ub.textContent='⬆️ Upgrade '+fmt(upCost);}
+    const hb=document.getElementById('mbtn-hire');if(hb){hb.disabled=S.money<hc||w>=needed;hb.textContent='👷 Huren '+fmt(hc);}
+  }else{
+    const bb=document.getElementById('mbtn-buy');if(bb){bb.disabled=S.money<mBuilding.price;bb.textContent='💰 Kopen '+fmt(mBuilding.price);}
+  }
+}
+
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function confirmBuy(){if(S.money<mBuilding.price)return;S.money-=mBuilding.price;S.ownedSlots[mSlot]={buildingId:mBuilding.id,level:1,workers:0,damaged:false};closeModal();showToast('✅ '+mBuilding.name+' gekocht!');renderCity();renderMyBiz();updateHUD();}
-function confirmUpgrade(){const cost=upgradePrice(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;S.ownedSlots[mSlot].level++;closeModal();showToast('⬆️ '+mBuilding.name+' → Level '+S.ownedSlots[mSlot].level+'!');renderCity();renderMyBiz();updateHUD();}
+function confirmUpgrade(){const cost=upgradePrice(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;S.ownedSlots[mSlot].level++;mLevel++;showToast('⬆️ '+mBuilding.name+' → Level '+S.ownedSlots[mSlot].level+'!');renderCity();renderMyBiz();updateHUD();updateModalButtons();}
 function confirmHire(){const d=S.ownedSlots[mSlot];const needed=Math.ceil(mBuilding.maxWorkers*(mLevel*0.6+0.4));const w=d.workers||0;if(w>=needed)return;const cost=hireCost(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;d.workers=w+1;closeModal();showToast('👷 Werknemer aangenomen bij '+mBuilding.name+'!');renderCity();renderMyBiz();updateHUD();}
+function confirmSell(){const d=S.ownedSlots[mSlot];if(!d)return;const b=BUILDINGS.find(x=>x.id===d.buildingId);const refund=Math.round(b.price*0.5*d.level);if(!confirm(`${b.name} verkopen voor ${fmt(refund)}? (50% terugwaarde)`))return;S.money+=refund;delete S.ownedSlots[mSlot];closeModal();showToast('💸 '+b.name+' verkocht voor '+fmt(refund)+'!');renderCity();renderMyBiz();updateHUD();}
 
 function renderMyBiz(){
   const g=document.getElementById('mybiz-grid');const owned=Object.entries(S.ownedSlots);
@@ -621,7 +753,7 @@ function renderLoans(){
   document.getElementById('loan-offers').innerHTML=LOAN_OFFERS.map(l=>`<div class="loan-card"><div class="loan-name">${l.name}</div><div class="loan-info">💰 Bedrag: <b>${fmt(l.amount)}</b><br>📈 Rente: <b>${fmt(l.ratePerSec)}/sec</b><br>📝 ${l.desc}</div><button class="btn-loan" onclick="takeLoan('${l.id}')">Lening Afsluiten</button></div>`).join('');
   const actEl=document.getElementById('active-loans');
   if(!S.loans.length){actEl.innerHTML='<div style="color:var(--text-dim);font-size:13px">Geen actieve leningen.</div>';}
-  else{actEl.innerHTML=S.loans.map(l=>{const o=LOAN_OFFERS.find(x=>x.id===l.loanId);const canFull=S.money>=l.remaining;return`<div class="active-loan"><div style="font-weight:700;font-size:13px;margin-bottom:5px">${o.name}</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Nog te betalen: <span id="loan-remaining-${l.id}" style="color:var(--red);font-family:'Orbitron',monospace">${fmt(l.remaining)}</span><br>Rente: ${fmt(l.ratePerSec)}/sec</div><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input id="repay-amt-${l.id}" type="number" min="1" max="${Math.floor(l.remaining)}" value="${Math.min(Math.floor(l.remaining),Math.floor(S.money))}" style="flex:1;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;padding:5px 7px"/><button class="btn-repay" style="flex:0 0 auto;padding:6px 10px" onclick="repayPartial(${l.id})">Aflossen</button></div><button id="loan-fullbtn-${l.id}" class="btn-repay" ${!canFull?'disabled':''} onclick="repayLoan(${l.id})" style="width:100%;background:${canFull?'var(--accent2)':'#333'};color:${canFull?'#000':'#666'}">Alles aflossen ${fmt(l.remaining)}</button></div>`;}).join('');}
+  else{actEl.innerHTML=S.loans.map(l=>{const o=LOAN_OFFERS.find(x=>x.id===l.loanId);const canFull=S.money>=l.remaining;const autoVal=l.autoRepay||0;return`<div class="active-loan"><div style="font-weight:700;font-size:13px;margin-bottom:5px">${o.name}</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Nog te betalen: <span id="loan-remaining-${l.id}" style="color:var(--red);font-family:'Orbitron',monospace">${fmt(l.remaining)}</span><br>Rente: ${fmt(l.ratePerSec)}/sec</div><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input id="repay-amt-${l.id}" type="number" min="1" max="${Math.floor(l.remaining)}" value="${Math.min(Math.floor(l.remaining),Math.floor(S.money))}" style="flex:1;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;padding:5px 7px"/><button class="btn-repay" style="flex:0 0 auto;padding:6px 10px" onclick="repayPartial(${l.id})">Aflossen</button></div><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px;color:var(--text-dim)"><span>🔄 Auto/sec:</span><input id="auto-repay-${l.id}" type="number" min="0" value="${autoVal}" placeholder="0" style="width:70px;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-family:'Orbitron',monospace;font-size:11px;padding:4px 6px" onchange="setAutoRepay(${l.id},this.value)"/><span style="color:var(--text-dim)">€/sec automatisch</span></div><button id="loan-fullbtn-${l.id}" class="btn-repay" ${!canFull?'disabled':''} onclick="repayLoan(${l.id})" style="width:100%;background:${canFull?'var(--accent2)':'#333'};color:${canFull?'#000':'#666'}">Alles aflossen ${fmt(l.remaining)}</button></div>`;}).join('');}
   const debt=getTotalDebt();document.getElementById('debt-overview').innerHTML=debt>0?`Totale schuld: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(debt)}</span><br>Rente per sec: <span style="color:var(--red)">${fmt(getLoanCost())}/s</span>`:'<span style="color:var(--accent2)">Schuldenvrij! ✅</span>';
 }
 function takeLoan(loanId){const o=LOAN_OFFERS.find(x=>x.id===loanId);S.money+=o.amount;S.loans.push({id:S.nextLoanId++,loanId:o.id,amount:o.amount,remaining:o.amount*1.3,ratePerSec:o.ratePerSec});showToast('🏦 Lening van '+fmt(o.amount)+' ontvangen!');renderLoans();updateHUD();}
@@ -637,6 +769,7 @@ function renderLoansPassive(){
   const debt=getTotalDebt();
   document.getElementById('debt-overview').innerHTML=debt>0?`Totale schuld: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(debt)}</span><br>Rente per sec: <span style="color:var(--red)">${fmt(getLoanCost())}/s</span>`:'<span style="color:var(--accent2)">Schuldenvrij! ✅</span>';
 }
+function setAutoRepay(id,val){const l=S.loans.find(x=>x.id===id);if(l)l.autoRepay=Math.max(0,parseFloat(val)||0);}
 function repayLoan(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];if(S.money<l.remaining)return;S.money-=l.remaining;S.loans.splice(idx,1);showToast('✅ Lening volledig afgelost!');renderLoans();updateHUD();}
 function repayPartial(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];const input=document.getElementById('repay-amt-'+id);const amt=Math.min(Math.max(1,parseFloat(input.value)||0),l.remaining,S.money);if(amt<=0){showToast('❌ Ongeldig bedrag!');return;}S.money-=amt;l.remaining-=amt;if(l.remaining<=0)S.loans.splice(idx,1);showToast('💸 '+fmt(amt)+' afgelost! Nog: '+fmt(Math.max(0,l.remaining)));renderLoans();updateHUD();}
 
@@ -662,12 +795,15 @@ function gameTick(){
   const DT=gameSpeed===1?1:gameSpeed===2?0.5:0.2;
   const gross=getTotalIncome();const div=getDividend();const tax=gross*S.taxRate;const wc=getWorkerCost();const lc=getLoanCost();
   S.money+=(gross-tax-wc-lc+div)*DT;S.totalDividendEarned+=div*DT;
-  S.loans.forEach(l=>{l.remaining=Math.max(0,l.remaining-l.ratePerSec*DT);});S.loans=S.loans.filter(l=>l.remaining>0);
+  // Auto-aflossen per lening
+  S.loans.forEach(l=>{if(l.autoRepay&&l.autoRepay>0&&S.money>l.autoRepay*2){const pay=Math.min(l.autoRepay*DT,l.remaining,S.money*0.5);S.money-=pay;l.remaining=Math.max(0,l.remaining-pay);}});
+  S.loans=S.loans.filter(l=>l.remaining>0);
   if(tickCount%30===0&&gross>0&&notifEnabled('notif-tax')){const f=document.getElementById('tax-flash');f.textContent='🧾 Belasting: -'+fmt(tax*DT*30);f.classList.add('show');setTimeout(()=>f.classList.remove('show'),2500);}
   S.taxRate=Math.min(0.40,0.15+Math.max(0,gross-10)*0.0005);
   if(tickCount%2===0)tickStocks();
   if(tickCount%120===0&&notifEnabled('notif-events'))triggerEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
   if(tickCount%10===0)saveGame();
+  updateModalButtons();
   updateHUD();
   const active=document.querySelector('.page.active');
   if(active){const id=active.id;if(id==='tab-stad')tickUpdateCity();else if(id==='tab-bedrijven')tickUpdateMyBiz();else if(id==='tab-investeren')tickUpdateInvest();else if(id==='tab-leningen')renderLoansPassive();}
@@ -679,13 +815,13 @@ function switchTab(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   if(btn)btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
-  if(name==='investeren')renderInvest();else if(name==='bedrijven')renderMyBiz();else if(name==='stad')renderCity();else if(name==='leningen')renderLoans();
+  if(name==='investeren')renderInvest();else if(name==='bedrijven')renderMyBiz();else if(name==='stad')renderCity();else if(name==='leningen')renderLoans();else if(name==='instellingen')loadName();
 }
 
 let toastTimer=null;
 function showToast(msg){if(!notifEnabled('notif-toast'))return;const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
 
-loadGame();renderCity();renderLoans();updateHUD();setTheme('cyber');
+loadGame();loadLang();loadName();renderCity();renderLoans();updateHUD();setTheme('cyber');
 </script>
 </body>
 </html>
