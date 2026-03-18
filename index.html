@@ -162,8 +162,14 @@ main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-wid
 /* TOAST */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--accent2);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--accent2);box-shadow:0 0 20px rgba(0,255,136,.3);z-index:200;transform:translateY(80px);opacity:0;transition:all .3s;}
 #toast.show{transform:translateY(0);opacity:1;}
-.empty-state{text-align:center;padding:36px;color:var(--text-dim);}
-.empty-state .es-emoji{font-size:44px;margin-bottom:10px;}
+.theme-card{cursor:pointer;border-radius:10px;overflow:hidden;border:2px solid transparent;transition:all .2s;}
+.theme-card:hover{transform:scale(1.04);}
+.theme-card.active-theme{border-color:var(--accent)!important;box-shadow:0 0 14px rgba(0,212,255,.4);}
+.theme-preview{height:60px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;border-radius:8px;}
+.theme-name{font-size:11px;font-weight:600;text-align:center;padding:5px;background:var(--panel2);color:var(--text-dim);}
+.speed-btn{flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel2);color:var(--text-dim);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.speed-btn:hover{border-color:var(--accent);color:var(--accent);}
+.speed-btn.active-speed{background:var(--accent);color:#000;border-color:var(--accent);}
 ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 </style>
 </head>
@@ -185,6 +191,7 @@ main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-wid
   <button class="tab" onclick="switchTab('bedrijven',this)">🏢 Mijn Bedrijven</button>
   <button class="tab" onclick="switchTab('investeren',this)">📈 Investeren</button>
   <button class="tab" onclick="switchTab('leningen',this)">🏦 Leningen</button>
+  <button class="tab" onclick="switchTab('instellingen',this)">⚙️ Instellingen</button>
 </div>
 <main>
   <!-- STAD -->
@@ -253,6 +260,79 @@ main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-wid
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
         <div class="panel-title">📊 Schuldoverzicht</div>
         <div id="debt-overview" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+  <!-- INSTELLINGEN -->
+  <div class="page" id="tab-instellingen">
+    <div class="panel" style="max-width:520px">
+      <div class="panel-title">🎨 Thema</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px">
+        <div class="theme-card" onclick="setTheme('cyber')" id="theme-cyber">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#080c18,#0f1624);border-color:#00d4ff">
+            <span style="color:#00d4ff;font-size:11px;font-family:'Orbitron',monospace">CYBER</span>
+          </div>
+          <div class="theme-name">Cyber Nacht</div>
+        </div>
+        <div class="theme-card" onclick="setTheme('forest')" id="theme-forest">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#0a1a0e,#122018);border-color:#4ade80">
+            <span style="color:#4ade80;font-size:11px;font-family:'Orbitron',monospace">FOREST</span>
+          </div>
+          <div class="theme-name">Groen Bos</div>
+        </div>
+        <div class="theme-card" onclick="setTheme('sunset')" id="theme-sunset">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#1a0a08,#201210);border-color:#f97316">
+            <span style="color:#f97316;font-size:11px;font-family:'Orbitron',monospace">SUNSET</span>
+          </div>
+          <div class="theme-name">Zonsondergang</div>
+        </div>
+        <div class="theme-card" onclick="setTheme('ocean')" id="theme-ocean">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#081018,#0a1828);border-color:#38bdf8">
+            <span style="color:#38bdf8;font-size:11px;font-family:'Orbitron',monospace">OCEAN</span>
+          </div>
+          <div class="theme-name">Oceaan</div>
+        </div>
+        <div class="theme-card" onclick="setTheme('gold')" id="theme-gold">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#181008,#201808);border-color:#fbbf24">
+            <span style="color:#fbbf24;font-size:11px;font-family:'Orbitron',monospace">GOLD</span>
+          </div>
+          <div class="theme-name">Goud</div>
+        </div>
+        <div class="theme-card" onclick="setTheme('purple')" id="theme-purple">
+          <div class="theme-preview" style="background:linear-gradient(135deg,#100818,#180e28);border-color:#c084fc">
+            <span style="color:#c084fc;font-size:11px;font-family:'Orbitron',monospace">PURPLE</span>
+          </div>
+          <div class="theme-name">Paars</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex:1">
+      <div class="panel">
+        <div class="panel-title">⚡ Spelsnelheid</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Hoe snel gaat het geld tellen?</div>
+        <div style="display:flex;gap:8px">
+          <button class="speed-btn" id="speed-1" onclick="setSpeed(1)">🐢 Langzaam</button>
+          <button class="speed-btn active-speed" id="speed-2" onclick="setSpeed(2)">▶️ Normaal</button>
+          <button class="speed-btn" id="speed-3" onclick="setSpeed(3)">⚡ Snel</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🔔 Meldingen</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="notif-events" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Random events tonen
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="notif-tax" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Belasting flash tonen
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="notif-toast" checked onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--accent)"> Toast meldingen tonen
+          </label>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">⚠️ Spel Resetten</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px">Dit verwijdert al je voortgang!</div>
+        <button onclick="resetGame()" style="padding:9px 20px;border:none;border-radius:8px;background:var(--red);color:#fff;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🗑️ Spel Resetten</button>
       </div>
     </div>
   </div>
@@ -342,7 +422,7 @@ let S={money:5000,ownedSlots:{},stocks:{},stockPrices:{},stockHistory:{},takenOv
 STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
 let tickCount=0;
 
-function fmt(n){if(n>=1e9)return'€'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'€'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'€'+(n/1e3).toFixed(1)+'K';return'€'+n.toFixed(0);}
+function fmt(n){if(n>=1e9)return'€'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'€'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'€'+(n/1e3).toFixed(1)+'K';if(S.money<1000)return'€'+n.toFixed(2);return'€'+n.toFixed(0);}
 function workerEff(slot){const d=S.ownedSlots[slot];if(!d)return 1;const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;if(w===0)return 0.4;return 0.4+0.6*Math.min(1,w/needed);}
 function slotIncome(slot){const d=S.ownedSlots[slot];if(!d)return 0;const b=BUILDINGS.find(x=>x.id===d.buildingId);let base=b.income*Math.pow(d.level,1.5)*workerEff(slot);if(d.damaged)base*=0.5;if(S.activeEvents.strike)base*=0.4;if(S.activeEvents.recession)base*=0.6;if(S.activeEvents.boom)base*=1.8;return base;}
 function getTotalIncome(){let t=0;for(const k in S.ownedSlots)t+=slotIncome(k);STOCKS.forEach(s=>{if(S.takenOver[s.id])t+=s.dividend*10;});return t;}
@@ -365,6 +445,51 @@ function updateHUD(){
   document.getElementById('hud-debt').textContent=fmt(getTotalDebt());
   document.getElementById('hud-tax').textContent=Math.round(S.taxRate*100)+'%';
 }
+
+// ── THEMA'S ──────────────────────────────────
+const THEMES={
+  cyber: {bg:'#080c18',panel:'#0f1624',panel2:'#151f30',panel3:'#1a2540',border:'#1e3255',accent:'#00d4ff',accent2:'#00ff88',gold:'#ffd700',text:'#c8d8e8',textDim:'#4a6a8a',red:'#ff4466',purple:'#a855f7'},
+  forest:{bg:'#080f0a',panel:'#0d1810',panel2:'#122018',panel3:'#162818',border:'#1a3520',accent:'#4ade80',accent2:'#86efac',gold:'#fde68a',text:'#c8e8d0',textDim:'#4a7a5a',red:'#f87171',purple:'#c084fc'},
+  sunset:{bg:'#130804',panel:'#1e1008',panel2:'#281408',panel3:'#301808',border:'#3d2010',accent:'#f97316',accent2:'#fb923c',gold:'#fcd34d',text:'#f0d8c8',textDim:'#7a5a4a',red:'#ef4444',purple:'#e879f9'},
+  ocean: {bg:'#040c14',panel:'#081420',panel2:'#0c1c2e',panel3:'#102438',border:'#143050',accent:'#38bdf8',accent2:'#7dd3fc',gold:'#fde68a',text:'#c8e0f0',textDim:'#4a6a8a',red:'#f87171',purple:'#818cf8'},
+  gold:  {bg:'#0e0a04',panel:'#1a1408',panel2:'#221c0c',panel3:'#2a2210',border:'#3a3010',accent:'#fbbf24',accent2:'#fcd34d',gold:'#f59e0b',text:'#f0e8c8',textDim:'#7a6a4a',red:'#f87171',purple:'#c084fc'},
+  purple:{bg:'#0c0614',panel:'#140c20',panel2:'#1c1230',panel3:'#221640',border:'#301850',accent:'#c084fc',accent2:'#d8b4fe',gold:'#fde68a',text:'#e8d8f8',textDim:'#6a4a8a',red:'#f87171',purple:'#a78bfa'},
+};
+let currentTheme='cyber';
+let gameSpeed=2; // 1=slow(1s), 2=normal(0.5s), 3=fast(0.2s)
+let gameInterval=null;
+
+function setTheme(name){
+  currentTheme=name;
+  const t=THEMES[name];
+  const r=document.documentElement.style;
+  r.setProperty('--bg',t.bg);r.setProperty('--panel',t.panel);r.setProperty('--panel2',t.panel2);r.setProperty('--panel3',t.panel3);
+  r.setProperty('--border',t.border);r.setProperty('--accent',t.accent);r.setProperty('--accent2',t.accent2);
+  r.setProperty('--gold',t.gold);r.setProperty('--text',t.text);r.setProperty('--text-dim',t.textDim);
+  r.setProperty('--red',t.red);r.setProperty('--purple',t.purple);
+  document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active-theme'));
+  const el=document.getElementById('theme-'+name);if(el)el.classList.add('active-theme');
+}
+
+function setSpeed(s){
+  gameSpeed=s;
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active-speed'));
+  document.getElementById('speed-'+s).classList.add('active-speed');
+  if(gameInterval)clearInterval(gameInterval);
+  const ms=s===1?1000:s===2?500:200;
+  gameInterval=setInterval(gameTick,ms);
+}
+
+function saveSettings(){} // checkboxes worden live gelezen
+
+function resetGame(){
+  if(!confirm('Weet je het zeker? Al je voortgang gaat verloren!'))return;
+  S.money=5000;S.ownedSlots={};S.loans=[];S.nextLoanId=1;S.taxRate=0.15;S.activeEvents={};S.totalDividendEarned=0;
+  STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
+  tickCount=0;renderCity();renderLoans();updateHUD();showToast('🔄 Spel gereset!');
+}
+
+function notifEnabled(id){const el=document.getElementById(id);return el?el.checked:true;}
 
 function renderCity(){
   const g=document.getElementById('city-grid');g.innerHTML='';
@@ -525,28 +650,22 @@ function triggerEvent(evt){
 
 function tickStocks(){STOCKS.forEach(s=>{const cur=S.stockPrices[s.id];const drift=(s.basePrice-cur)*0.015;const noise=(Math.random()-.5)*cur*0.05;S.stockPrices[s.id]=Math.max(s.basePrice*0.2,Math.round((cur+drift+noise)*100)/100);const h=S.stockHistory[s.id];h.push(S.stockPrices[s.id]);if(h.length>80)h.shift();});}
 
-// Tick elke 500ms = 0.5 seconde per tick
-setInterval(()=>{
+function gameTick(){
   tickCount++;
-  const DT=0.5;
+  const DT=gameSpeed===1?1:gameSpeed===2?0.5:0.2;
   const gross=getTotalIncome();const div=getDividend();const tax=gross*S.taxRate;const wc=getWorkerCost();const lc=getLoanCost();
   S.money+=(gross-tax-wc-lc+div)*DT;S.totalDividendEarned+=div*DT;
-  // Leningen
   S.loans.forEach(l=>{l.remaining=Math.max(0,l.remaining-l.ratePerSec*DT);});S.loans=S.loans.filter(l=>l.remaining>0);
-  // Belasting flash elke 30 ticks (~15 sec)
-  if(tickCount%30===0&&gross>0){const f=document.getElementById('tax-flash');f.textContent='🧾 Belasting: -'+fmt(tax*DT*30);f.classList.add('show');setTimeout(()=>f.classList.remove('show'),2500);}
-  // Belasting stijgt langzaam
+  if(tickCount%30===0&&gross>0&&notifEnabled('notif-tax')){const f=document.getElementById('tax-flash');f.textContent='🧾 Belasting: -'+fmt(tax*DT*30);f.classList.add('show');setTimeout(()=>f.classList.remove('show'),2500);}
   S.taxRate=Math.min(0.40,0.15+Math.max(0,gross-10)*0.0005);
-  // Stocks elke 2 ticks (~1 sec)
   if(tickCount%2===0)tickStocks();
-  // Random event: 1x per minuut max (120 ticks)
-  if(tickCount%120===0)triggerEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
-  // Nieuws elke 60 ticks (~30 sec)
+  if(tickCount%120===0&&notifEnabled('notif-events'))triggerEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
   if(tickCount%60===0)document.getElementById('news-ticker-text').textContent=NEWS[Math.floor(Math.random()*NEWS.length)]+'   ·   '+NEWS.slice(0,3).join('   ·   ');
   updateHUD();
   const active=document.querySelector('.page.active');
   if(active){const id=active.id;if(id==='tab-stad')tickUpdateCity();else if(id==='tab-bedrijven')tickUpdateMyBiz();else if(id==='tab-investeren')tickUpdateInvest();else if(id==='tab-leningen')renderLoansPassive();}
-},500);
+}
+setSpeed(2);
 
 function switchTab(name,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -557,9 +676,9 @@ function switchTab(name,btn){
 }
 
 let toastTimer=null;
-function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
+function showToast(msg){if(!notifEnabled('notif-toast'))return;const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
 
-renderCity();renderLoans();updateHUD();
+renderCity();renderLoans();updateHUD();setTheme('cyber');
 </script>
 </body>
 </html>
