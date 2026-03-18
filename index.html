@@ -374,8 +374,7 @@ function renderCity(){
     if(d){
       const b=BUILDINGS.find(x=>x.id===d.buildingId);el.classList.add('owned');
       if(d.damaged)el.classList.add('damaged');
-      const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));
-      el.innerHTML=`<span class="slot-workers">${d.workers||0}👷</span><span class="slot-emoji">${d.damaged?'🔥':b.emoji}</span><span class="slot-name">${b.name}</span><span class="slot-income">${fmt(slotIncome(i))}/s</span><span class="slot-badge">Lvl ${d.level}</span>`;
+      el.innerHTML=`<span class="slot-workers" id="sw-${i}">${d.workers||0}👷</span><span class="slot-emoji" id="se-${i}">${d.damaged?'🔥':b.emoji}</span><span class="slot-name">${b.name}</span><span class="slot-income" id="si-${i}">${fmt(slotIncome(i))}/s</span><span class="slot-badge">Lvl ${d.level}</span>`;
       el.onclick=()=>openModal(i,b,true,d.level);
     }else if(i<12){
       const b=BUILDINGS[i];
@@ -386,11 +385,20 @@ function renderCity(){
   }
   renderBizList();
 }
+function tickUpdateCity(){
+  for(const i in S.ownedSlots){
+    const el=document.getElementById('si-'+i);if(el)el.textContent=fmt(slotIncome(i))+'/s';
+  }
+  tickUpdateBizList();
+}
 
 function renderBizList(){
   const el=document.getElementById('biz-list');const owned=Object.entries(S.ownedSlots);
   if(!owned.length){el.innerHTML=`<div class="empty-state"><div class="es-emoji">🏗️</div><p>Nog geen bedrijven.</p></div>`;return;}
-  el.innerHTML=owned.map(([s,d])=>{const b=BUILDINGS.find(x=>x.id===d.buildingId);const eff=Math.round(workerEff(s)*100);return`<div class="biz-item"><span class="biz-emoji">${d.damaged?'🔥':b.emoji}</span><div class="biz-info"><div class="biz-name">${b.name}</div><div class="biz-stats">Eff: ${eff}% | ${fmt(slotIncome(s))}/s</div></div><span class="biz-lvl">Lvl ${d.level}</span></div>`;}).join('');
+  el.innerHTML=owned.map(([s,d])=>{const b=BUILDINGS.find(x=>x.id===d.buildingId);const eff=Math.round(workerEff(s)*100);return`<div class="biz-item"><span class="biz-emoji">${d.damaged?'🔥':b.emoji}</span><div class="biz-info"><div class="biz-name">${b.name}</div><div class="biz-stats" id="bl-${s}">Eff: ${eff}% | ${fmt(slotIncome(s))}/s</div></div><span class="biz-lvl">Lvl ${d.level}</span></div>`;}).join('');
+}
+function tickUpdateBizList(){
+  for(const s in S.ownedSlots){const el=document.getElementById('bl-'+s);if(el)el.textContent=`Eff: ${Math.round(workerEff(s)*100)}% | ${fmt(slotIncome(s))}/s`;}
 }
 
 let mSlot,mBuilding,mOwned,mLevel;
@@ -428,8 +436,16 @@ function renderMyBiz(){
   if(!owned.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="es-emoji">🏗️</div><p>Ga naar de Stad kaart!</p></div>`;return;}
   g.innerHTML=owned.map(([slot,d])=>{
     const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;const hc=hireCost(b,d.level);const eff=Math.round(workerEff(slot)*100);const prog=Math.min(100,S.money/cost*100);
-    return`<div class="mybiz-card${d.damaged?' damaged':''}"><div class="mybiz-top"><span class="mybiz-emoji">${d.damaged?'🔥':b.emoji}</span><div><div class="mybiz-name">${b.name}</div><div class="mybiz-level">LEVEL ${d.level}</div></div></div><div class="mybiz-stat"><span>Inkomen</span><span>${fmt(slotIncome(slot))}/s</span></div><div class="mybiz-stat"><span>Werknemers</span><span>${w}/${needed}</span></div><div class="mybiz-stat"><span>Efficiëntie</span><span>${eff}%</span></div><div class="mybiz-stat"><span>Upgrade kost</span><span>${fmt(cost)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div><div class="mybiz-btns"><button class="btn-sm btn-sm-up" ${S.money<cost?'disabled':''} onclick="doUpgrade(${slot})">⬆️ ${fmt(cost)}</button><button class="btn-sm btn-sm-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="doHire(${slot})">👷 ${fmt(hc)}</button></div></div>`;
+    return`<div class="mybiz-card${d.damaged?' damaged':''}"><div class="mybiz-top"><span class="mybiz-emoji">${d.damaged?'🔥':b.emoji}</span><div><div class="mybiz-name">${b.name}</div><div class="mybiz-level">LEVEL ${d.level}</div></div></div><div class="mybiz-stat"><span>Inkomen</span><span id="mb-inc-${slot}">${fmt(slotIncome(slot))}/s</span></div><div class="mybiz-stat"><span>Werknemers</span><span>${w}/${needed}</span></div><div class="mybiz-stat"><span>Efficiëntie</span><span id="mb-eff-${slot}">${eff}%</span></div><div class="mybiz-stat"><span>Upgrade kost</span><span>${fmt(cost)}</span></div><div class="progress-bar"><div class="progress-fill" id="mb-prog-${slot}" style="width:${prog}%"></div></div><div class="mybiz-btns"><button class="btn-sm btn-sm-up" ${S.money<cost?'disabled':''} onclick="doUpgrade(${slot})">⬆️ ${fmt(cost)}</button><button class="btn-sm btn-sm-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="doHire(${slot})">👷 ${fmt(hc)}</button></div></div>`;
   }).join('');
+}
+function tickUpdateMyBiz(){
+  for(const slot in S.ownedSlots){
+    const cost=upgradePrice(BUILDINGS.find(x=>x.id===S.ownedSlots[slot].buildingId),S.ownedSlots[slot].level);
+    const inc=document.getElementById('mb-inc-'+slot);if(inc)inc.textContent=fmt(slotIncome(slot))+'/s';
+    const eff=document.getElementById('mb-eff-'+slot);if(eff)eff.textContent=Math.round(workerEff(slot)*100)+'%';
+    const prog=document.getElementById('mb-prog-'+slot);if(prog)prog.style.width=Math.min(100,S.money/cost*100)+'%';
+  }
 }
 function doUpgrade(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);if(S.money<cost)return;S.money-=cost;d.level++;showToast('⬆️ '+b.name+' → Level '+d.level+'!');renderCity();renderMyBiz();updateHUD();}
 function doHire(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));if((d.workers||0)>=needed)return;const cost=hireCost(b,d.level);if(S.money<cost)return;S.money-=cost;d.workers=(d.workers||0)+1;showToast('👷 Werknemer aangenomen bij '+b.name+'!');renderCity();renderMyBiz();updateHUD();}
@@ -441,9 +457,25 @@ function renderInvest(){
     const max=Math.max(...hist),min=Math.min(...hist),range=max-min||1;
     const pts=hist.slice(-20).map((p,i,arr)=>{const x=(i/(arr.length-1||1))*200;const y=36-((p-min)/range)*32;return x+','+y;}).join(' ');
     const ownPct=Math.round(ownership(s.id)*100);const pv=own.amount*price;const pnl=own.amount>0?pv-own.amount*own.avgBuyPrice:0;const pnlStr=pnl>=0?'+'+fmt(pnl):fmt(pnl);const divInc=s.dividend>0?fmt(own.amount*s.dividend/10)+'/s':'Geen';
-    return`<div class="stock-card${own.amount>0?' owned-stock':''}"><div class="stock-header"><span class="stock-emoji">${s.emoji}</span><div><div class="stock-name">${s.name}</div><div class="stock-ticker">${s.ticker}${S.takenOver[s.id]?' 👑':''}</div></div></div><div class="stock-price">${fmt(price)}</div><div class="stock-change ${isUp?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(change)}%</div><div class="stock-chart"><svg width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="${isUp?'var(--accent2)':'var(--red)'}" stroke-width="2" points="${pts}"/></svg></div><div class="stock-dividend">💎 Dividend: ${divInc} | Eigendom: ${ownPct}%</div><div class="stock-owned-info">Jij: ${own.amount} × ${fmt(price)} = ${fmt(pv)}${own.amount>0?' <span style="color:'+(pnl>=0?'var(--accent2)':'var(--red)')+'">(' +pnlStr+')</span>':''}</div><div class="stock-buttons"><input class="qty-input" id="qty-${s.id}" type="number" value="1" min="1"/><button class="btn-stock btn-koop" ${S.money<price?'disabled':''} onclick="buyStock('${s.id}')">Kopen</button><button class="btn-stock btn-verkoop" ${own.amount===0?'disabled':''} onclick="sellStock('${s.id}')">Verkopen</button></div></div>`;
+    return`<div class="stock-card${own.amount>0?' owned-stock':''}"><div class="stock-header"><span class="stock-emoji">${s.emoji}</span><div><div class="stock-name">${s.name}</div><div class="stock-ticker">${s.ticker}${S.takenOver[s.id]?' 👑':''}</div></div></div><div class="stock-price" id="sp-${s.id}">${fmt(price)}</div><div class="stock-change ${isUp?'up':'down'}" id="sc-${s.id}">${isUp?'▲':'▼'} ${Math.abs(change)}%</div><div class="stock-chart"><svg id="schart-${s.id}" width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="${isUp?'var(--accent2)':'var(--red)'}" stroke-width="2" points="${pts}"/></svg></div><div class="stock-dividend" id="sdiv-${s.id}">💎 Dividend: ${divInc} | Eigendom: ${ownPct}%</div><div class="stock-owned-info" id="sown-${s.id}">Jij: ${own.amount} × ${fmt(price)} = ${fmt(pv)}${own.amount>0?' <span style="color:'+(pnl>=0?'var(--accent2)':'var(--red)')+'">(' +pnlStr+')</span>':''}</div><div class="stock-buttons"><input class="qty-input" id="qty-${s.id}" type="number" value="1" min="1"/><button class="btn-stock btn-koop" id="skoop-${s.id}" ${S.money<price?'disabled':''} onclick="buyStock('${s.id}')">Kopen</button><button class="btn-stock btn-verkoop" id="sverk-${s.id}" ${own.amount===0?'disabled':''} onclick="sellStock('${s.id}')">Verkopen</button></div></div>`;
   }).join('');
   renderPortfolio();renderTakeover();renderDividendInfo();
+}
+function tickUpdateInvest(){
+  STOCKS.forEach(s=>{
+    const price=S.stockPrices[s.id];const hist=S.stockHistory[s.id];const own=S.stocks[s.id];
+    const prev=hist.length>1?hist[hist.length-2]:price;const change=((price-prev)/prev*100).toFixed(2);const isUp=price>=prev;
+    const sp=document.getElementById('sp-'+s.id);if(sp)sp.textContent=fmt(price);
+    const sc=document.getElementById('sc-'+s.id);if(sc){sc.textContent=(isUp?'▲':'▼')+' '+Math.abs(change)+'%';sc.className='stock-change '+(isUp?'up':'down');}
+    const chart=document.getElementById('schart-'+s.id);
+    if(chart){const max=Math.max(...hist),min=Math.min(...hist),range=max-min||1;const pts=hist.slice(-20).map((p,i,arr)=>{const x=(i/(arr.length-1||1))*200;const y=36-((p-min)/range)*32;return x+','+y;}).join(' ');chart.innerHTML=`<polyline fill="none" stroke="${isUp?'var(--accent2)':'var(--red)'}" stroke-width="2" points="${pts}"/>`;}
+    const pv=own.amount*price;const pnl=own.amount>0?pv-own.amount*own.avgBuyPrice:0;const pnlStr=pnl>=0?'+'+fmt(pnl):fmt(pnl);const ownPct=Math.round(ownership(s.id)*100);const divInc=s.dividend>0?fmt(own.amount*s.dividend/10)+'/s':'Geen';
+    const sdiv=document.getElementById('sdiv-'+s.id);if(sdiv)sdiv.textContent=`💎 Dividend: ${divInc} | Eigendom: ${ownPct}%`;
+    const sown=document.getElementById('sown-'+s.id);if(sown)sown.innerHTML=`Jij: ${own.amount} × ${fmt(price)} = ${fmt(pv)}`+(own.amount>0?` <span style="color:${pnl>=0?'var(--accent2)':'var(--red)'}">(${pnlStr})</span>`:'');
+    const koop=document.getElementById('skoop-'+s.id);if(koop)koop.disabled=S.money<price;
+    const verk=document.getElementById('sverk-'+s.id);if(verk)verk.disabled=own.amount===0;
+  });
+  renderPortfolio();renderDividendInfo();
 }
 function getQty(id){const el=document.getElementById('qty-'+id);return el?Math.max(1,parseInt(el.value)||1):1;}
 function buyStock(id){const qty=getQty(id);const price=S.stockPrices[id]*qty;if(S.money<price){showToast('❌ Niet genoeg geld!');return;}const s=S.stocks[id];s.amount+=qty;s.avgBuyPrice=(s.amount*s.avgBuyPrice+price)/s.amount;S.money-=price;showToast('📈 '+qty+'x '+STOCKS.find(x=>x.id===id).name+' gekocht!');renderInvest();updateHUD();}
@@ -457,10 +489,22 @@ function renderLoans(){
   document.getElementById('loan-offers').innerHTML=LOAN_OFFERS.map(l=>`<div class="loan-card"><div class="loan-name">${l.name}</div><div class="loan-info">💰 Bedrag: <b>${fmt(l.amount)}</b><br>📈 Rente: <b>${fmt(l.ratePerSec)}/sec</b><br>📝 ${l.desc}</div><button class="btn-loan" onclick="takeLoan('${l.id}')">Lening Afsluiten</button></div>`).join('');
   const actEl=document.getElementById('active-loans');
   if(!S.loans.length){actEl.innerHTML='<div style="color:var(--text-dim);font-size:13px">Geen actieve leningen.</div>';}
-  else{actEl.innerHTML=S.loans.map(l=>{const o=LOAN_OFFERS.find(x=>x.id===l.loanId);const canFull=S.money>=l.remaining;return`<div class="active-loan"><div style="font-weight:700;font-size:13px;margin-bottom:5px">${o.name}</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Nog te betalen: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(l.remaining)}</span><br>Rente: ${fmt(l.ratePerSec)}/sec</div><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input id="repay-amt-${l.id}" type="number" min="1" max="${Math.floor(l.remaining)}" value="${Math.min(Math.floor(l.remaining),Math.floor(S.money))}" style="flex:1;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;padding:5px 7px"/><button class="btn-repay" style="flex:0 0 auto;padding:6px 10px" onclick="repayPartial(${l.id})">Aflossen</button></div><button class="btn-repay" ${!canFull?'disabled':''} onclick="repayLoan(${l.id})" style="width:100%;background:${canFull?'var(--accent2)':'#333'};color:${canFull?'#000':'#666'}">Alles aflossen ${fmt(l.remaining)}</button></div>`;}).join('');}
+  else{actEl.innerHTML=S.loans.map(l=>{const o=LOAN_OFFERS.find(x=>x.id===l.loanId);const canFull=S.money>=l.remaining;return`<div class="active-loan"><div style="font-weight:700;font-size:13px;margin-bottom:5px">${o.name}</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Nog te betalen: <span id="loan-remaining-${l.id}" style="color:var(--red);font-family:'Orbitron',monospace">${fmt(l.remaining)}</span><br>Rente: ${fmt(l.ratePerSec)}/sec</div><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input id="repay-amt-${l.id}" type="number" min="1" max="${Math.floor(l.remaining)}" value="${Math.min(Math.floor(l.remaining),Math.floor(S.money))}" style="flex:1;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;padding:5px 7px"/><button class="btn-repay" style="flex:0 0 auto;padding:6px 10px" onclick="repayPartial(${l.id})">Aflossen</button></div><button id="loan-fullbtn-${l.id}" class="btn-repay" ${!canFull?'disabled':''} onclick="repayLoan(${l.id})" style="width:100%;background:${canFull?'var(--accent2)':'#333'};color:${canFull?'#000':'#666'}">Alles aflossen ${fmt(l.remaining)}</button></div>`;}).join('');}
   const debt=getTotalDebt();document.getElementById('debt-overview').innerHTML=debt>0?`Totale schuld: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(debt)}</span><br>Rente per sec: <span style="color:var(--red)">${fmt(getLoanCost())}/s</span>`:'<span style="color:var(--accent2)">Schuldenvrij! ✅</span>';
 }
 function takeLoan(loanId){const o=LOAN_OFFERS.find(x=>x.id===loanId);S.money+=o.amount;S.loans.push({id:S.nextLoanId++,loanId:o.id,amount:o.amount,remaining:o.amount*1.3,ratePerSec:o.ratePerSec});showToast('🏦 Lening van '+fmt(o.amount)+' ontvangen!');renderLoans();updateHUD();}
+function renderLoansPassive(){
+  S.loans.forEach(l=>{
+    const span=document.getElementById('loan-remaining-'+l.id);
+    if(span)span.textContent=fmt(l.remaining);
+    const input=document.getElementById('repay-amt-'+l.id);
+    if(input&&document.activeElement!==input)input.max=Math.floor(l.remaining);
+    const fullBtn=document.getElementById('loan-fullbtn-'+l.id);
+    if(fullBtn){fullBtn.disabled=S.money<l.remaining;fullBtn.textContent='Alles aflossen '+fmt(l.remaining);}
+  });
+  const debt=getTotalDebt();
+  document.getElementById('debt-overview').innerHTML=debt>0?`Totale schuld: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(debt)}</span><br>Rente per sec: <span style="color:var(--red)">${fmt(getLoanCost())}/s</span>`:'<span style="color:var(--accent2)">Schuldenvrij! ✅</span>';
+}
 function repayLoan(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];if(S.money<l.remaining)return;S.money-=l.remaining;S.loans.splice(idx,1);showToast('✅ Lening volledig afgelost!');renderLoans();updateHUD();}
 function repayPartial(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];const input=document.getElementById('repay-amt-'+id);const amt=Math.min(Math.max(1,parseFloat(input.value)||0),l.remaining,S.money);if(amt<=0){showToast('❌ Ongeldig bedrag!');return;}S.money-=amt;l.remaining-=amt;if(l.remaining<=0)S.loans.splice(idx,1);showToast('💸 '+fmt(amt)+' afgelost! Nog: '+fmt(Math.max(0,l.remaining)));renderLoans();updateHUD();}
 
@@ -501,7 +545,7 @@ setInterval(()=>{
   if(tickCount%60===0)document.getElementById('news-ticker-text').textContent=NEWS[Math.floor(Math.random()*NEWS.length)]+'   ·   '+NEWS.slice(0,3).join('   ·   ');
   updateHUD();
   const active=document.querySelector('.page.active');
-  if(active){const id=active.id;if(id==='tab-stad')renderCity();else if(id==='tab-bedrijven')renderMyBiz();else if(id==='tab-investeren')renderInvest();else if(id==='tab-leningen')renderLoans();}
+  if(active){const id=active.id;if(id==='tab-stad')tickUpdateCity();else if(id==='tab-bedrijven')tickUpdateMyBiz();else if(id==='tab-investeren')tickUpdateInvest();else if(id==='tab-leningen')renderLoansPassive();}
 },500);
 
 function switchTab(name,btn){
