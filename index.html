@@ -418,8 +418,15 @@ const NEWS=[
   '🌱 GreenEnergy wint grote overheidsopdracht.',
 ];
 // STATE
-let S={money:5000,ownedSlots:{},stocks:{},stockPrices:{},stockHistory:{},takenOver:{},loans:[],nextLoanId:1,taxRate:0.15,activeEvents:{},totalDividendEarned:0};
+const DEFAULT_STATE=()=>({money:5000,ownedSlots:{},stocks:{},stockPrices:{},stockHistory:{},takenOver:{},loans:[],nextLoanId:1,taxRate:0.15,activeEvents:{},totalDividendEarned:0});
+let S=DEFAULT_STATE();
 STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
+
+// Laad opgeslagen voortgang
+function saveGame(){try{localStorage.setItem('citytycoon_save',JSON.stringify({money:S.money,ownedSlots:S.ownedSlots,stocks:S.stocks,stockPrices:S.stockPrices,stockHistory:S.stockHistory,takenOver:S.takenOver,loans:S.loans,nextLoanId:S.nextLoanId,taxRate:S.taxRate,totalDividendEarned:S.totalDividendEarned}));}catch(e){}}
+function loadGame(){try{const raw=localStorage.getItem('citytycoon_save');if(!raw)return false;const saved=JSON.parse(raw);Object.assign(S,saved);// zorg dat alle stocks bestaan
+STOCKS.forEach(s=>{if(!S.stocks[s.id])S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};if(!S.stockPrices[s.id])S.stockPrices[s.id]=s.basePrice;if(!S.stockHistory[s.id])S.stockHistory[s.id]=[s.basePrice];if(S.takenOver[s.id]===undefined)S.takenOver[s.id]=false;});return true;}catch(e){return false;}}
+
 let tickCount=0;
 
 function fmt(n){if(n>=1e9)return'€'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'€'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'€'+(n/1e3).toFixed(1)+'K';if(S.money<1000)return'€'+n.toFixed(2);return'€'+n.toFixed(0);}
@@ -486,7 +493,7 @@ function resetGame(){
   if(!confirm('Weet je het zeker? Al je voortgang gaat verloren!'))return;
   S.money=5000;S.ownedSlots={};S.loans=[];S.nextLoanId=1;S.taxRate=0.15;S.activeEvents={};S.totalDividendEarned=0;
   STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
-  tickCount=0;renderCity();renderLoans();updateHUD();showToast('🔄 Spel gereset!');
+  tickCount=0;saveGame();renderCity();renderLoans();updateHUD();showToast('🔄 Spel gereset!');
 }
 
 function notifEnabled(id){const el=document.getElementById(id);return el?el.checked:true;}
@@ -660,7 +667,7 @@ function gameTick(){
   S.taxRate=Math.min(0.40,0.15+Math.max(0,gross-10)*0.0005);
   if(tickCount%2===0)tickStocks();
   if(tickCount%120===0&&notifEnabled('notif-events'))triggerEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
-  if(tickCount%60===0)document.getElementById('news-ticker-text').textContent=NEWS[Math.floor(Math.random()*NEWS.length)]+'   ·   '+NEWS.slice(0,3).join('   ·   ');
+  if(tickCount%10===0)saveGame();
   updateHUD();
   const active=document.querySelector('.page.active');
   if(active){const id=active.id;if(id==='tab-stad')tickUpdateCity();else if(id==='tab-bedrijven')tickUpdateMyBiz();else if(id==='tab-investeren')tickUpdateInvest();else if(id==='tab-leningen')renderLoansPassive();}
@@ -678,7 +685,7 @@ function switchTab(name,btn){
 let toastTimer=null;
 function showToast(msg){if(!notifEnabled('notif-toast'))return;const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
 
-renderCity();renderLoans();updateHUD();setTheme('cyber');
+loadGame();renderCity();renderLoans();updateHUD();setTheme('cyber');
 </script>
 </body>
 </html>
