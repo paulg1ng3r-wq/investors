@@ -1,1 +1,521 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CityTycoon Pro 🏙️</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080c18;--panel:#0f1624;--panel2:#151f30;--panel3:#1a2540;
+  --border:#1e3255;--accent:#00d4ff;--accent2:#00ff88;--accent3:#ff6b35;
+  --gold:#ffd700;--text:#c8d8e8;--text-dim:#4a6a8a;--red:#ff4466;
+  --purple:#a855f7;--shadow:0 0 24px rgba(0,212,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+/* HEADER */
+header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:linear-gradient(135deg,#0a1020,#0f1624);border-bottom:1px solid var(--border);box-shadow:0 2px 30px rgba(0,0,0,0.6);}
+.logo{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent);letter-spacing:2px;text-shadow:0 0 20px var(--accent);}
+.logo span{color:var(--accent2);}
+.hud{display:flex;gap:8px;flex-wrap:wrap;}
+.hud-stat{display:flex;flex-direction:column;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;min-width:80px;}
+.hud-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);}
+.hud-value{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--gold);}
+.hud-value.green{color:var(--accent2);}.hud-value.blue{color:var(--accent);}.hud-value.red{color:var(--red);}.hud-value.purple{color:var(--purple);}
+/* TABS */
+.tabs{position:relative;z-index:10;display:flex;gap:3px;padding:8px 20px 0;background:var(--panel);border-bottom:1px solid var(--border);}
+.tab{padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;background:transparent;color:var(--text-dim);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.tab:hover{color:var(--accent);background:rgba(0,212,255,0.05);}
+.tab.active{background:var(--bg);border-color:var(--border);color:var(--accent);text-shadow:0 0 10px var(--accent);}
+/* MAIN */
+main{position:relative;z-index:5;display:flex;gap:14px;padding:14px 20px;max-width:1500px;margin:0 auto;}
+.page{display:none;width:100%;}
+.page.active{display:flex;gap:14px;width:100%;}
+/* PANELS */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow);}
+.panel-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+/* STAD */
+.city-map{flex:1;min-width:0;}
+.city-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;}
+.city-slot{aspect-ratio:1;border-radius:10px;border:1px solid var(--border);background:var(--panel2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;padding:5px;}
+.city-slot:hover{border-color:var(--accent);transform:scale(1.04);box-shadow:0 0 16px rgba(0,212,255,0.3);}
+.city-slot.owned{border-color:var(--accent2);background:linear-gradient(135deg,#0a2018,#0f1e10);}
+.city-slot.owned:hover{box-shadow:0 0 16px rgba(0,255,136,0.3);}
+.city-slot.empty-lot{border-style:dashed;opacity:.4;cursor:default;}
+.city-slot.damaged{border-color:var(--red)!important;background:linear-gradient(135deg,#200a0a,#1e0f0f)!important;}
+.slot-emoji{font-size:26px;line-height:1;}
+.slot-name{font-size:9px;font-weight:600;text-align:center;color:var(--text);line-height:1.2;}
+.slot-income{font-family:'Orbitron',monospace;font-size:8px;color:var(--accent2);}
+.slot-badge{position:absolute;top:3px;right:3px;background:var(--accent2);color:#000;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;}
+.slot-workers{position:absolute;top:3px;left:3px;font-size:9px;}
+/* SIDE PANEL */
+.side-panel{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+.business-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;}
+.biz-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;}
+.biz-emoji{font-size:20px;}
+.biz-info{flex:1;min-width:0;}
+.biz-name{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.biz-stats{font-size:10px;color:var(--text-dim);}
+.biz-lvl{font-family:'Orbitron',monospace;font-size:10px;color:var(--accent);white-space:nowrap;}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--accent);border-radius:16px;padding:24px;width:380px;box-shadow:0 0 40px rgba(0,212,255,0.3);position:relative;max-height:90vh;overflow-y:auto;}
+.modal h2{font-family:'Orbitron',monospace;font-size:15px;color:var(--accent);margin-bottom:5px;}
+.modal-emoji{font-size:44px;text-align:center;margin:12px 0;}
+.modal-desc{color:var(--text-dim);font-size:12px;margin-bottom:14px;line-height:1.5;}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px;}
+.modal-stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px;text-align:center;}
+.modal-stat-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;}
+.modal-stat-value{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);margin-top:3px;}
+.modal-buttons{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{flex:1;padding:9px;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;min-width:80px;}
+.btn-buy{background:linear-gradient(135deg,#00a854,#00ff88);color:#000;}
+.btn-buy:hover{transform:scale(1.03);box-shadow:0 0 20px rgba(0,255,136,.4);}
+.btn-buy:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-upgrade{background:linear-gradient(135deg,#0080cc,#00d4ff);color:#000;}
+.btn-upgrade:hover{transform:scale(1.03);}
+.btn-upgrade:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-cancel{background:var(--panel2);border:1px solid var(--border);color:var(--text-dim);}
+.btn-cancel:hover{border-color:var(--red);color:var(--red);}
+.btn-hire{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;}
+.btn-hire:hover{transform:scale(1.03);}
+.btn-hire:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+/* WORKERS */
+.worker-section{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px;}
+.worker-title{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.worker-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.worker-info{font-size:12px;}
+.worker-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.worker-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));border-radius:3px;transition:width .4s;}
+/* MIJN BEDRIJVEN */
+.mybiz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;flex:1;align-content:start;}
+.mybiz-card{background:var(--panel2);border:1px solid var(--accent2);border-radius:12px;padding:14px;position:relative;}
+.mybiz-card.damaged{border-color:var(--red);}
+.mybiz-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.mybiz-emoji{font-size:28px;}
+.mybiz-name{font-weight:700;font-size:13px;}
+.mybiz-level{font-family:'Orbitron',monospace;font-size:10px;color:var(--accent);}
+.mybiz-stat{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;}
+.mybiz-stat span:last-child{color:var(--gold);font-family:'Orbitron',monospace;font-size:10px;}
+.progress-bar{height:4px;background:var(--border);border-radius:4px;margin:7px 0;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:4px;transition:width .5s;}
+.mybiz-btns{display:flex;gap:5px;margin-top:8px;}
+.btn-sm{flex:1;padding:6px;border:none;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-sm-up{background:linear-gradient(135deg,#0080cc,#00d4ff);color:#000;}
+.btn-sm-up:disabled{opacity:.4;cursor:not-allowed;}
+.btn-sm-hire{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;}
+.btn-sm-hire:disabled{opacity:.4;cursor:not-allowed;}
+/* INVESTEREN */
+.invest-layout{display:flex;gap:14px;flex:1;}
+.invest-left{flex:1;min-width:0;}
+.invest-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+.invest-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stock-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;transition:border-color .2s;}
+.stock-card:hover{border-color:var(--accent);}
+.stock-card.owned-stock{border-color:var(--gold);}
+.stock-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.stock-emoji{font-size:24px;}
+.stock-name{font-weight:700;font-size:13px;}
+.stock-ticker{font-family:'Orbitron',monospace;font-size:9px;color:var(--text-dim);}
+.stock-price{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:3px;}
+.stock-change{font-size:11px;font-weight:600;margin-bottom:8px;}
+.stock-change.up{color:var(--accent2);}.stock-change.down{color:var(--red);}
+.stock-chart{height:36px;margin-bottom:8px;}
+.stock-dividend{font-size:10px;color:var(--purple);margin-bottom:6px;}
+.stock-owned-info{font-size:10px;color:var(--text-dim);margin-bottom:8px;}
+.stock-buttons{display:flex;gap:5px;align-items:center;}
+.btn-stock{padding:5px 8px;border:none;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-koop{background:var(--accent2);color:#000;}
+.btn-koop:hover{box-shadow:0 0 10px rgba(0,255,136,.4);}
+.btn-koop:disabled{opacity:.4;cursor:not-allowed;}
+.btn-verkoop{background:var(--red);color:#fff;}
+.btn-verkoop:hover{box-shadow:0 0 10px rgba(255,68,102,.4);}
+.btn-verkoop:disabled{opacity:.4;cursor:not-allowed;}
+.qty-input{width:44px;background:var(--panel3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;text-align:center;padding:4px;}
+/* LENINGEN */
+.loan-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;}
+.loan-name{font-weight:700;font-size:13px;margin-bottom:4px;}
+.loan-info{font-size:11px;color:var(--text-dim);margin-bottom:8px;line-height:1.6;}
+.btn-loan{width:100%;padding:7px;border:none;border-radius:7px;background:linear-gradient(135deg,#cc6600,#ff9933);color:#000;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-loan:hover{box-shadow:0 0 12px rgba(255,153,51,.4);}
+.active-loan{background:var(--panel2);border:1px solid var(--accent3);border-radius:10px;padding:10px;margin-bottom:8px;}
+.btn-repay{width:100%;padding:6px;border:none;border-radius:6px;background:var(--red);color:#fff;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.btn-repay:disabled{opacity:.4;cursor:not-allowed;}
+/* NIEUWS */
+.news-ticker{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 20px;font-size:12px;color:var(--accent3);white-space:nowrap;overflow:hidden;position:relative;z-index:10;}
+.news-inner{display:inline-block;animation:ticker 35s linear infinite;}
+@keyframes ticker{0%{transform:translateX(100vw);}100%{transform:translateX(-100%);}}
+/* TAX FLASH */
+.tax-flash{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--red);border-radius:10px;padding:8px 20px;color:var(--red);font-family:'Orbitron',monospace;font-size:13px;z-index:150;opacity:0;transition:opacity .3s;pointer-events:none;}
+.tax-flash.show{opacity:1;}
+/* EVENT BANNER */
+.event-banner{position:fixed;top:60px;right:20px;background:var(--panel);border:2px solid var(--accent3);border-radius:12px;padding:14px 18px;max-width:300px;z-index:150;box-shadow:0 0 30px rgba(255,107,53,.3);transform:translateX(120%);transition:transform .4s;}
+.event-banner.show{transform:translateX(0);}
+.event-title{font-family:'Orbitron',monospace;font-size:13px;color:var(--accent3);margin-bottom:5px;}
+.event-desc{font-size:12px;color:var(--text);line-height:1.5;}
+.btn-takeover{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;width:100%;margin-bottom:6px;}
+.btn-takeover:hover{box-shadow:0 0 14px rgba(168,85,247,.4);}
+.btn-takeover:disabled{opacity:.4;cursor:not-allowed;}
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--accent2);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--accent2);box-shadow:0 0 20px rgba(0,255,136,.3);z-index:200;transform:translateY(80px);opacity:0;transition:all .3s;}
+#toast.show{transform:translateY(0);opacity:1;}
+.empty-state{text-align:center;padding:36px;color:var(--text-dim);}
+.empty-state .es-emoji{font-size:44px;margin-bottom:10px;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="news-ticker"><span class="news-inner" id="news-ticker-text">📰 Welkom bij CityTycoon Pro — bouw je economisch imperium!</span></div>
+<header>
+  <div class="logo">City<span>Tycoon</span> <span style="font-size:11px;color:var(--text-dim)">PRO</span></div>
+  <div class="hud">
+    <div class="hud-stat"><div class="hud-label">💰 Geld</div><div class="hud-value" id="hud-money">€5.000</div></div>
+    <div class="hud-stat"><div class="hud-label">📈 Netto/sec</div><div class="hud-value green" id="hud-income">€0</div></div>
+    <div class="hud-stat"><div class="hud-label">🏢 Bedrijven</div><div class="hud-value blue" id="hud-count">0</div></div>
+    <div class="hud-stat"><div class="hud-label">📊 Portfolio</div><div class="hud-value" id="hud-portfolio">€0</div></div>
+    <div class="hud-stat"><div class="hud-label">🏦 Schuld</div><div class="hud-value red" id="hud-debt">€0</div></div>
+    <div class="hud-stat"><div class="hud-label">🧾 Belasting</div><div class="hud-value purple" id="hud-tax">15%</div></div>
+  </div>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('stad',this)">🏙️ Stad</button>
+  <button class="tab" onclick="switchTab('bedrijven',this)">🏢 Mijn Bedrijven</button>
+  <button class="tab" onclick="switchTab('investeren',this)">📈 Investeren</button>
+  <button class="tab" onclick="switchTab('leningen',this)">🏦 Leningen</button>
+</div>
+<main>
+  <!-- STAD -->
+  <div class="page active" id="tab-stad">
+    <div class="panel city-map">
+      <div class="panel-title">🗺️ Stad Kaart — klik een gebouw</div>
+      <div class="city-grid" id="city-grid"></div>
+    </div>
+    <div class="side-panel">
+      <div class="panel">
+        <div class="panel-title">📋 Mijn Bedrijven</div>
+        <div class="business-list" id="biz-list"><div class="empty-state"><div class="es-emoji">🏗️</div><p>Koop je eerste gebouw!</p></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">⚠️ Spelregels</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.9">
+          • Belasting stijgt naarmate je meer verdient<br>
+          • Geen werknemers = 40% minder inkomen<br>
+          • Werknemers kosten €0.50/sec per stuk<br>
+          • Leningen hebben doorlopende rente<br>
+          • Random events kunnen alles omgooien!
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- MIJN BEDRIJVEN -->
+  <div class="page" id="tab-bedrijven">
+    <div class="panel" style="flex:1">
+      <div class="panel-title">🏢 Mijn Bedrijven — overzicht & beheer</div>
+      <div class="mybiz-grid" id="mybiz-grid"><div class="empty-state" style="grid-column:1/-1"><div class="es-emoji">🏗️</div><p>Ga naar de Stad om bedrijven te kopen!</p></div></div>
+    </div>
+  </div>
+  <!-- INVESTEREN -->
+  <div class="page" id="tab-investeren">
+    <div class="invest-layout">
+      <div class="panel invest-left">
+        <div class="panel-title">📊 Aandelenmarkt — koop meerdere tegelijk</div>
+        <div class="invest-grid" id="invest-grid"></div>
+      </div>
+      <div class="invest-right">
+        <div class="panel">
+          <div class="panel-title">💎 Mijn Portfolio</div>
+          <div id="portfolio-list"><div style="color:var(--text-dim);font-size:12px">Nog geen aandelen.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">👑 Bedrijfsovername</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">Bezit 51%+ van een aandeel om het bedrijf over te nemen en extra passief inkomen te ontvangen!</div>
+          <div id="takeover-list"><div style="color:var(--text-dim);font-size:11px">Koop 51%+ van een aandeel.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">💰 Dividend Inkomsten</div>
+          <div id="dividend-info" style="font-size:12px;color:var(--text-dim)">Koop aandelen met dividend.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- LENINGEN -->
+  <div class="page" id="tab-leningen">
+    <div class="panel" style="flex:1;max-width:480px">
+      <div class="panel-title">🏦 Leningen Afsluiten</div>
+      <div id="loan-offers"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <div class="panel-title">📋 Actieve Leningen</div>
+      <div id="active-loans"><div style="color:var(--text-dim);font-size:13px">Geen actieve leningen.</div></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="panel-title">📊 Schuldoverzicht</div>
+        <div id="debt-overview" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-emoji" id="modal-emoji">🏪</div>
+    <h2 id="modal-title">Gebouw</h2>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="worker-section" id="modal-workers" style="display:none">
+      <div class="worker-title">👷 Medewerkers</div>
+      <div class="worker-row">
+        <div class="worker-info" id="worker-info-text">0 / 0</div>
+        <div class="worker-bar"><div class="worker-fill" id="worker-fill" style="width:0%"></div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:5px" id="worker-effect-text"></div>
+    </div>
+    <div class="modal-stats">
+      <div class="modal-stat"><div class="modal-stat-label">Prijs / Kost</div><div class="modal-stat-value" id="modal-price"></div></div>
+      <div class="modal-stat"><div class="modal-stat-label">Inkomen/sec</div><div class="modal-stat-value" id="modal-income"></div></div>
+    </div>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+<!-- EVENT BANNER -->
+<div class="event-banner" id="event-banner">
+  <div class="event-title" id="event-title">EVENT</div>
+  <div class="event-desc" id="event-desc"></div>
+</div>
+<div class="tax-flash" id="tax-flash">🧾 Belasting betaald!</div>
+<div id="toast"></div>
 
+<script>
+const BUILDINGS=[
+  {id:'bakkerij',emoji:'🥐',name:'Bakkerij',desc:'Verse broodjes elke ochtend!',price:500,income:1.2,maxWorkers:2,upgradeMult:1.8},
+  {id:'garage',emoji:'🔧',name:'Garage',desc:'Autoreparaties en onderhoud.',price:800,income:1.8,maxWorkers:3,upgradeMult:1.8},
+  {id:'supermarkt',emoji:'🛒',name:'Supermarkt',desc:'Dagelijkse boodschappen voor de buurt.',price:1500,income:3.2,maxWorkers:5,upgradeMult:1.9},
+  {id:'restaurant',emoji:'🍽️',name:'Restaurant',desc:'Populair eetcafe met terras.',price:2000,income:4.5,maxWorkers:4,upgradeMult:1.9},
+  {id:'hotel',emoji:'🏨',name:'Hotel',desc:'Toeristen stromen toe.',price:4000,income:9,maxWorkers:8,upgradeMult:2.0},
+  {id:'bioscoop',emoji:'🎬',name:'Bioscoop',desc:'Popcorn en blockbusters!',price:3500,income:7.5,maxWorkers:6,upgradeMult:2.0},
+  {id:'apotheek',emoji:'💊',name:'Apotheek',desc:'Gezondheid loont altijd.',price:2500,income:5,maxWorkers:3,upgradeMult:1.85},
+  {id:'sportschool',emoji:'💪',name:'Sportschool',desc:'Maandabonnementen. Passief goud.',price:3000,income:6,maxWorkers:4,upgradeMult:1.9},
+  {id:'bank',emoji:'🏦',name:'Bank',desc:'De bank werkt dag en nacht.',price:8000,income:18,maxWorkers:10,upgradeMult:2.1},
+  {id:'fabriek',emoji:'🏭',name:'Fabriek',desc:'Massaproductie levert enorme winsten.',price:12000,income:27,maxWorkers:15,upgradeMult:2.1},
+  {id:'wolkenkrabber',emoji:'🏙️',name:'Wolkenkrabber',desc:'Verhuur kantoorruimte hoog boven de stad.',price:25000,income:55,maxWorkers:20,upgradeMult:2.2},
+  {id:'vliegveld',emoji:'✈️',name:'Vliegveld',desc:'Internationaal transport.',price:50000,income:120,maxWorkers:30,upgradeMult:2.3},
+];
+const STOCKS=[
+  {id:'techcorp',emoji:'💻',name:'TechCorp',ticker:'TCH',basePrice:100,dividend:0.8,totalShares:200},
+  {id:'foodie',emoji:'🍔',name:'FoodieInc',ticker:'FDI',basePrice:60,dividend:0.5,totalShares:150},
+  {id:'greenenergy',emoji:'🌱',name:'GreenEnergy',ticker:'GRN',basePrice:80,dividend:0.6,totalShares:180},
+  {id:'realstate',emoji:'🏘️',name:'RealState',ticker:'RST',basePrice:150,dividend:1.2,totalShares:120},
+  {id:'pharma',emoji:'🧬',name:'PharmaCo',ticker:'PHM',basePrice:120,dividend:0.9,totalShares:160},
+  {id:'cryptobits',emoji:'🪙',name:'CryptoBits',ticker:'CTB',basePrice:200,dividend:0,totalShares:100},
+];
+const LOAN_OFFERS=[
+  {id:'micro',name:'Microlening',amount:2000,ratePerSec:0.05,desc:'Klein en snel. Weinig rente.'},
+  {id:'small',name:'Kleine Lening',amount:10000,ratePerSec:0.20,desc:'Voor een paar upgrades.'},
+  {id:'medium',name:'Bedrijfslening',amount:50000,ratePerSec:0.80,desc:'Serieuze investering nodig?'},
+  {id:'large',name:'Grootlening',amount:200000,ratePerSec:2.50,desc:'Gevaarlijk maar krachtig.'},
+];
+const EVENTS=[
+  {title:'🔥 BRAND!',desc:'Een van je bedrijven staat in brand! 50% minder inkomen voor 30 seconden.',type:'bad',effect:'damage',duration:30},
+  {title:'📉 RECESSIE',desc:'Economische recessie! Alle bedrijven 40% minder inkomen voor 45 seconden.',type:'bad',effect:'recession',duration:45},
+  {title:'🚀 BOOM ECONOMY',desc:'De economie bloeit! Alle bedrijven 80% meer inkomen voor 30 seconden.',type:'good',effect:'boom',duration:30},
+  {title:'✊ STAKING',desc:'Je medewerkers staken! Alle bedrijven tijdelijk 60% minder efficiënt.',type:'bad',effect:'strike',duration:20},
+  {title:'🧾 BELASTINGCONTROLE',desc:'De belastingdienst controleert je! Extra boete betalen.',type:'bad',effect:'taxaudit',duration:0},
+  {title:'🏛️ SUBSIDIE',desc:'De overheid geeft je een subsidie! Gratis geld!',type:'good',effect:'subsidy',duration:0},
+  {title:'📈 BULL RUN',desc:'Aandelenmarkt explodeert! Alle koersen +30% voor 20 seconden.',type:'good',effect:'bullrun',duration:20},
+  {title:'💥 MARKTCRASH',desc:'De aandelenmarkt crasht! Alle koersen -35% voor 25 seconden.',type:'bad',effect:'crash',duration:25},
+];
+const NEWS=[
+  '📰 Analisten verwachten sterke groei in techsector dit kwartaal.',
+  '🏗️ Nieuwe bouwregels kunnen stadsuitbreiding beperken.',
+  '💡 Groene energie steeds populairder bij investeerders.',
+  '🍔 FoodieInc opent 50 nieuwe vestigingen wereldwijd.',
+  '🏦 Centrale bank verhoogt de rente met 0.25%.',
+  '✈️ Luchtvaartsector herstelt na moeilijk jaar.',
+  '🪙 CryptoBits bereikt nieuwe all-time high!',
+  '🏘️ Huizenprijzen blijven stijgen in grote steden.',
+  '💊 PharmaCo presenteert veelbelovend nieuw medicijn.',
+  '🌱 GreenEnergy wint grote overheidsopdracht.',
+];
+// STATE
+let S={money:5000,ownedSlots:{},stocks:{},stockPrices:{},stockHistory:{},takenOver:{},loans:[],nextLoanId:1,taxRate:0.15,activeEvents:{},totalDividendEarned:0};
+STOCKS.forEach(s=>{S.stockPrices[s.id]=s.basePrice;S.stockHistory[s.id]=[s.basePrice];S.stocks[s.id]={amount:0,avgBuyPrice:s.basePrice};S.takenOver[s.id]=false;});
+let tickCount=0;
+
+function fmt(n){if(n>=1e9)return'€'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'€'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'€'+(n/1e3).toFixed(1)+'K';return'€'+n.toFixed(0);}
+function workerEff(slot){const d=S.ownedSlots[slot];if(!d)return 1;const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;if(w===0)return 0.4;return 0.4+0.6*Math.min(1,w/needed);}
+function slotIncome(slot){const d=S.ownedSlots[slot];if(!d)return 0;const b=BUILDINGS.find(x=>x.id===d.buildingId);let base=b.income*Math.pow(d.level,1.5)*workerEff(slot);if(d.damaged)base*=0.5;if(S.activeEvents.strike)base*=0.4;if(S.activeEvents.recession)base*=0.6;if(S.activeEvents.boom)base*=1.8;return base;}
+function getTotalIncome(){let t=0;for(const k in S.ownedSlots)t+=slotIncome(k);STOCKS.forEach(s=>{if(S.takenOver[s.id])t+=s.dividend*10;});return t;}
+function getWorkerCost(){let c=0;for(const k in S.ownedSlots)c+=(S.ownedSlots[k].workers||0)*0.1;return c;}
+function getLoanCost(){return S.loans.reduce((a,l)=>a+l.ratePerSec,0);}
+function getNetIncome(){return getTotalIncome()-getTotalIncome()*S.taxRate-getWorkerCost()-getLoanCost()+getDividend();}
+function getDividend(){let d=0;STOCKS.forEach(s=>{if(s.dividend>0)d+=S.stocks[s.id].amount*s.dividend/10;});return d;}
+function getTotalDebt(){return S.loans.reduce((a,l)=>a+l.remaining,0);}
+function getPortfolio(){let v=0;STOCKS.forEach(s=>v+=S.stocks[s.id].amount*S.stockPrices[s.id]);return v;}
+function upgradePrice(b,lv){return Math.round(b.price*Math.pow(b.upgradeMult,lv)*0.6);}
+function hireCost(b,lv){return Math.round(b.price*0.15*lv);}
+function ownership(id){const s=STOCKS.find(x=>x.id===id);return S.stocks[id].amount/s.totalShares;}
+
+function updateHUD(){
+  document.getElementById('hud-money').textContent=fmt(S.money);
+  const net=getNetIncome();const el=document.getElementById('hud-income');
+  el.textContent=fmt(net)+'/s';el.className='hud-value '+(net>=0?'green':'red');
+  document.getElementById('hud-count').textContent=Object.keys(S.ownedSlots).length;
+  document.getElementById('hud-portfolio').textContent=fmt(getPortfolio());
+  document.getElementById('hud-debt').textContent=fmt(getTotalDebt());
+  document.getElementById('hud-tax').textContent=Math.round(S.taxRate*100)+'%';
+}
+
+function renderCity(){
+  const g=document.getElementById('city-grid');g.innerHTML='';
+  for(let i=0;i<18;i++){
+    const el=document.createElement('div');el.className='city-slot';
+    const d=S.ownedSlots[i];
+    if(d){
+      const b=BUILDINGS.find(x=>x.id===d.buildingId);el.classList.add('owned');
+      if(d.damaged)el.classList.add('damaged');
+      const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));
+      el.innerHTML=`<span class="slot-workers">${d.workers||0}👷</span><span class="slot-emoji">${d.damaged?'🔥':b.emoji}</span><span class="slot-name">${b.name}</span><span class="slot-income">${fmt(slotIncome(i))}/s</span><span class="slot-badge">Lvl ${d.level}</span>`;
+      el.onclick=()=>openModal(i,b,true,d.level);
+    }else if(i<12){
+      const b=BUILDINGS[i];
+      el.innerHTML=`<span class="slot-emoji">${b.emoji}</span><span class="slot-name">${b.name}</span><span style="font-size:9px;color:var(--text-dim)">${fmt(b.price)}</span>`;
+      el.onclick=()=>openModal(i,b,false,0);
+    }else{el.classList.add('empty-lot');el.innerHTML=`<span style="font-size:20px;opacity:.4">🏗️</span><span class="slot-name" style="color:var(--text-dim)">Leeg</span>`;}
+    g.appendChild(el);
+  }
+  renderBizList();
+}
+
+function renderBizList(){
+  const el=document.getElementById('biz-list');const owned=Object.entries(S.ownedSlots);
+  if(!owned.length){el.innerHTML=`<div class="empty-state"><div class="es-emoji">🏗️</div><p>Nog geen bedrijven.</p></div>`;return;}
+  el.innerHTML=owned.map(([s,d])=>{const b=BUILDINGS.find(x=>x.id===d.buildingId);const eff=Math.round(workerEff(s)*100);return`<div class="biz-item"><span class="biz-emoji">${d.damaged?'🔥':b.emoji}</span><div class="biz-info"><div class="biz-name">${b.name}</div><div class="biz-stats">Eff: ${eff}% | ${fmt(slotIncome(s))}/s</div></div><span class="biz-lvl">Lvl ${d.level}</span></div>`;}).join('');
+}
+
+let mSlot,mBuilding,mOwned,mLevel;
+function openModal(slot,building,isOwned,level){
+  mSlot=slot;mBuilding=building;mOwned=isOwned;mLevel=level;
+  document.getElementById('modal-emoji').textContent=building.emoji;
+  document.getElementById('modal-title').textContent=building.name;
+  document.getElementById('modal-desc').textContent=building.desc;
+  const ws=document.getElementById('modal-workers');const btns=document.getElementById('modal-buttons');
+  if(isOwned){
+    const d=S.ownedSlots[slot];const needed=Math.ceil(building.maxWorkers*(level*0.6+0.4));const w=d.workers||0;const pct=needed>0?Math.round(w/needed*100):100;
+    ws.style.display='';
+    document.getElementById('worker-info-text').textContent=`${w} / ${needed} werknemers`;
+    document.getElementById('worker-fill').style.width=pct+'%';
+    document.getElementById('worker-effect-text').textContent=w===0?'⚠️ Geen werknemers! 60% inkomensverlies.':w<needed?`Efficiëntie: ${Math.round(workerEff(slot)*100)}%`:'✅ Volledig bezet!';
+    const upCost=upgradePrice(building,level);const hc=hireCost(building,level);
+    document.getElementById('modal-price').textContent=fmt(upCost);
+    document.getElementById('modal-income').textContent=fmt(slotIncome(slot))+'/s';
+    btns.innerHTML=`<button class="btn btn-upgrade" ${S.money<upCost?'disabled':''} onclick="confirmUpgrade()">⬆️ Upgrade ${fmt(upCost)}</button><button class="btn btn-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="confirmHire()">👷 Huren ${fmt(hc)}</button><button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
+  }else{
+    ws.style.display='none';
+    document.getElementById('modal-price').textContent=fmt(building.price);
+    document.getElementById('modal-income').textContent=fmt(building.income)+'/s';
+    btns.innerHTML=`<button class="btn btn-buy" ${S.money<building.price?'disabled':''} onclick="confirmBuy()">💰 Kopen ${fmt(building.price)}</button><button class="btn btn-cancel" onclick="closeModal()">✕</button>`;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function confirmBuy(){if(S.money<mBuilding.price)return;S.money-=mBuilding.price;S.ownedSlots[mSlot]={buildingId:mBuilding.id,level:1,workers:0,damaged:false};closeModal();showToast('✅ '+mBuilding.name+' gekocht!');renderCity();renderMyBiz();updateHUD();}
+function confirmUpgrade(){const cost=upgradePrice(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;S.ownedSlots[mSlot].level++;closeModal();showToast('⬆️ '+mBuilding.name+' → Level '+S.ownedSlots[mSlot].level+'!');renderCity();renderMyBiz();updateHUD();}
+function confirmHire(){const d=S.ownedSlots[mSlot];const needed=Math.ceil(mBuilding.maxWorkers*(mLevel*0.6+0.4));const w=d.workers||0;if(w>=needed)return;const cost=hireCost(mBuilding,mLevel);if(S.money<cost)return;S.money-=cost;d.workers=w+1;closeModal();showToast('👷 Werknemer aangenomen bij '+mBuilding.name+'!');renderCity();renderMyBiz();updateHUD();}
+
+function renderMyBiz(){
+  const g=document.getElementById('mybiz-grid');const owned=Object.entries(S.ownedSlots);
+  if(!owned.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="es-emoji">🏗️</div><p>Ga naar de Stad kaart!</p></div>`;return;}
+  g.innerHTML=owned.map(([slot,d])=>{
+    const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));const w=d.workers||0;const hc=hireCost(b,d.level);const eff=Math.round(workerEff(slot)*100);const prog=Math.min(100,S.money/cost*100);
+    return`<div class="mybiz-card${d.damaged?' damaged':''}"><div class="mybiz-top"><span class="mybiz-emoji">${d.damaged?'🔥':b.emoji}</span><div><div class="mybiz-name">${b.name}</div><div class="mybiz-level">LEVEL ${d.level}</div></div></div><div class="mybiz-stat"><span>Inkomen</span><span>${fmt(slotIncome(slot))}/s</span></div><div class="mybiz-stat"><span>Werknemers</span><span>${w}/${needed}</span></div><div class="mybiz-stat"><span>Efficiëntie</span><span>${eff}%</span></div><div class="mybiz-stat"><span>Upgrade kost</span><span>${fmt(cost)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div><div class="mybiz-btns"><button class="btn-sm btn-sm-up" ${S.money<cost?'disabled':''} onclick="doUpgrade(${slot})">⬆️ ${fmt(cost)}</button><button class="btn-sm btn-sm-hire" ${S.money<hc||w>=needed?'disabled':''} onclick="doHire(${slot})">👷 ${fmt(hc)}</button></div></div>`;
+  }).join('');
+}
+function doUpgrade(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const cost=upgradePrice(b,d.level);if(S.money<cost)return;S.money-=cost;d.level++;showToast('⬆️ '+b.name+' → Level '+d.level+'!');renderCity();renderMyBiz();updateHUD();}
+function doHire(slot){const d=S.ownedSlots[slot];const b=BUILDINGS.find(x=>x.id===d.buildingId);const needed=Math.ceil(b.maxWorkers*(d.level*0.6+0.4));if((d.workers||0)>=needed)return;const cost=hireCost(b,d.level);if(S.money<cost)return;S.money-=cost;d.workers=(d.workers||0)+1;showToast('👷 Werknemer aangenomen bij '+b.name+'!');renderCity();renderMyBiz();updateHUD();}
+
+function renderInvest(){
+  const g=document.getElementById('invest-grid');
+  g.innerHTML=STOCKS.map(s=>{
+    const price=S.stockPrices[s.id];const hist=S.stockHistory[s.id];const own=S.stocks[s.id];const prev=hist.length>1?hist[hist.length-2]:price;const change=((price-prev)/prev*100).toFixed(2);const isUp=price>=prev;
+    const max=Math.max(...hist),min=Math.min(...hist),range=max-min||1;
+    const pts=hist.slice(-20).map((p,i,arr)=>{const x=(i/(arr.length-1||1))*200;const y=36-((p-min)/range)*32;return x+','+y;}).join(' ');
+    const ownPct=Math.round(ownership(s.id)*100);const pv=own.amount*price;const pnl=own.amount>0?pv-own.amount*own.avgBuyPrice:0;const pnlStr=pnl>=0?'+'+fmt(pnl):fmt(pnl);const divInc=s.dividend>0?fmt(own.amount*s.dividend/10)+'/s':'Geen';
+    return`<div class="stock-card${own.amount>0?' owned-stock':''}"><div class="stock-header"><span class="stock-emoji">${s.emoji}</span><div><div class="stock-name">${s.name}</div><div class="stock-ticker">${s.ticker}${S.takenOver[s.id]?' 👑':''}</div></div></div><div class="stock-price">${fmt(price)}</div><div class="stock-change ${isUp?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(change)}%</div><div class="stock-chart"><svg width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="${isUp?'var(--accent2)':'var(--red)'}" stroke-width="2" points="${pts}"/></svg></div><div class="stock-dividend">💎 Dividend: ${divInc} | Eigendom: ${ownPct}%</div><div class="stock-owned-info">Jij: ${own.amount} × ${fmt(price)} = ${fmt(pv)}${own.amount>0?' <span style="color:'+(pnl>=0?'var(--accent2)':'var(--red)')+'">(' +pnlStr+')</span>':''}</div><div class="stock-buttons"><input class="qty-input" id="qty-${s.id}" type="number" value="1" min="1"/><button class="btn-stock btn-koop" ${S.money<price?'disabled':''} onclick="buyStock('${s.id}')">Kopen</button><button class="btn-stock btn-verkoop" ${own.amount===0?'disabled':''} onclick="sellStock('${s.id}')">Verkopen</button></div></div>`;
+  }).join('');
+  renderPortfolio();renderTakeover();renderDividendInfo();
+}
+function getQty(id){const el=document.getElementById('qty-'+id);return el?Math.max(1,parseInt(el.value)||1):1;}
+function buyStock(id){const qty=getQty(id);const price=S.stockPrices[id]*qty;if(S.money<price){showToast('❌ Niet genoeg geld!');return;}const s=S.stocks[id];s.amount+=qty;s.avgBuyPrice=(s.amount*s.avgBuyPrice+price)/s.amount;S.money-=price;showToast('📈 '+qty+'x '+STOCKS.find(x=>x.id===id).name+' gekocht!');renderInvest();updateHUD();}
+function sellStock(id){const qty=Math.min(getQty(id),S.stocks[id].amount);if(!qty)return;if(S.takenOver[id]){showToast('❌ Bedrijf is overgenomen, kan niet verkopen!');return;}const price=S.stockPrices[id]*qty;S.stocks[id].amount-=qty;S.money+=price;if(!S.stocks[id].amount)S.stocks[id].avgBuyPrice=S.stockPrices[id];showToast('💰 '+qty+'x '+STOCKS.find(x=>x.id===id).name+' verkocht!');renderInvest();updateHUD();}
+function renderPortfolio(){const el=document.getElementById('portfolio-list');const lines=STOCKS.filter(s=>S.stocks[s.id].amount>0).map(s=>{const val=S.stocks[s.id].amount*S.stockPrices[s.id];const pnl=val-S.stocks[s.id].amount*S.stocks[s.id].avgBuyPrice;return`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;padding:5px;background:var(--panel3);border-radius:6px"><span>${s.emoji} ${s.name} x${S.stocks[s.id].amount}</span><span style="color:${pnl>=0?'var(--accent2)':'var(--red)'}">${fmt(val)}</span></div>`;});el.innerHTML=lines.length?lines.join(''):'<div style="color:var(--text-dim);font-size:12px">Geen aandelen.</div>';}
+function renderTakeover(){const el=document.getElementById('takeover-list');const elig=STOCKS.filter(s=>ownership(s.id)>=0.51&&!S.takenOver[s.id]);if(!elig.length){el.innerHTML='<div style="color:var(--text-dim);font-size:11px">Koop 51%+ van een aandeel.</div>';return;}el.innerHTML=elig.map(s=>`<div style="margin-bottom:8px"><div style="font-size:12px;margin-bottom:5px">${s.emoji} <b>${s.name}</b> — ${Math.round(ownership(s.id)*100)}%</div><button class="btn-takeover" onclick="doTakeover('${s.id}')">👑 Neem over! +${fmt(s.dividend*10)}/s</button></div>`).join('');}
+function doTakeover(id){const s=STOCKS.find(x=>x.id===id);S.takenOver[id]=true;showToast('👑 '+s.name+' overgenomen! +'+fmt(s.dividend*10)+'/s bonus!');renderInvest();updateHUD();}
+function renderDividendInfo(){const d=getDividend();const el=document.getElementById('dividend-info');if(!d){el.innerHTML='<div style="color:var(--text-dim);font-size:12px">Koop aandelen met dividend.</div>';return;}el.innerHTML=`<div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--purple)">${fmt(d)}/s</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px">Totaal verdiend: ${fmt(S.totalDividendEarned)}</div>`;}
+
+function renderLoans(){
+  document.getElementById('loan-offers').innerHTML=LOAN_OFFERS.map(l=>`<div class="loan-card"><div class="loan-name">${l.name}</div><div class="loan-info">💰 Bedrag: <b>${fmt(l.amount)}</b><br>📈 Rente: <b>${fmt(l.ratePerSec)}/sec</b><br>📝 ${l.desc}</div><button class="btn-loan" onclick="takeLoan('${l.id}')">Lening Afsluiten</button></div>`).join('');
+  const actEl=document.getElementById('active-loans');
+  if(!S.loans.length){actEl.innerHTML='<div style="color:var(--text-dim);font-size:13px">Geen actieve leningen.</div>';}
+  else{actEl.innerHTML=S.loans.map(l=>{const o=LOAN_OFFERS.find(x=>x.id===l.loanId);const canFull=S.money>=l.remaining;return`<div class="active-loan"><div style="font-weight:700;font-size:13px;margin-bottom:5px">${o.name}</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Nog te betalen: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(l.remaining)}</span><br>Rente: ${fmt(l.ratePerSec)}/sec</div><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input id="repay-amt-${l.id}" type="number" min="1" max="${Math.floor(l.remaining)}" value="${Math.min(Math.floor(l.remaining),Math.floor(S.money))}" style="flex:1;background:var(--panel3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;padding:5px 7px"/><button class="btn-repay" style="flex:0 0 auto;padding:6px 10px" onclick="repayPartial(${l.id})">Aflossen</button></div><button class="btn-repay" ${!canFull?'disabled':''} onclick="repayLoan(${l.id})" style="width:100%;background:${canFull?'var(--accent2)':'#333'};color:${canFull?'#000':'#666'}">Alles aflossen ${fmt(l.remaining)}</button></div>`;}).join('');}
+  const debt=getTotalDebt();document.getElementById('debt-overview').innerHTML=debt>0?`Totale schuld: <span style="color:var(--red);font-family:'Orbitron',monospace">${fmt(debt)}</span><br>Rente per sec: <span style="color:var(--red)">${fmt(getLoanCost())}/s</span>`:'<span style="color:var(--accent2)">Schuldenvrij! ✅</span>';
+}
+function takeLoan(loanId){const o=LOAN_OFFERS.find(x=>x.id===loanId);S.money+=o.amount;S.loans.push({id:S.nextLoanId++,loanId:o.id,amount:o.amount,remaining:o.amount*1.3,ratePerSec:o.ratePerSec});showToast('🏦 Lening van '+fmt(o.amount)+' ontvangen!');renderLoans();updateHUD();}
+function repayLoan(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];if(S.money<l.remaining)return;S.money-=l.remaining;S.loans.splice(idx,1);showToast('✅ Lening volledig afgelost!');renderLoans();updateHUD();}
+function repayPartial(id){const idx=S.loans.findIndex(x=>x.id===id);if(idx<0)return;const l=S.loans[idx];const input=document.getElementById('repay-amt-'+id);const amt=Math.min(Math.max(1,parseFloat(input.value)||0),l.remaining,S.money);if(amt<=0){showToast('❌ Ongeldig bedrag!');return;}S.money-=amt;l.remaining-=amt;if(l.remaining<=0)S.loans.splice(idx,1);showToast('💸 '+fmt(amt)+' afgelost! Nog: '+fmt(Math.max(0,l.remaining)));renderLoans();updateHUD();}
+
+function triggerEvent(evt){
+  document.getElementById('event-title').textContent=evt.title;
+  document.getElementById('event-desc').textContent=evt.desc;
+  const b=document.getElementById('event-banner');b.style.borderColor=evt.type==='good'?'var(--accent2)':evt.type==='bad'?'var(--red)':'var(--gold)';b.classList.add('show');setTimeout(()=>b.classList.remove('show'),5000);
+  if(evt.effect==='damage'){const slots=Object.keys(S.ownedSlots);if(slots.length){const slot=slots[Math.floor(Math.random()*slots.length)];S.ownedSlots[slot].damaged=true;setTimeout(()=>{if(S.ownedSlots[slot])S.ownedSlots[slot].damaged=false;renderCity();},evt.duration*1000);}}
+  else if(evt.effect==='recession'){S.activeEvents.recession=true;setTimeout(()=>{delete S.activeEvents.recession;showToast('✅ Recessie voorbij!');},evt.duration*1000);}
+  else if(evt.effect==='boom'){S.activeEvents.boom=true;setTimeout(()=>{delete S.activeEvents.boom;showToast('📉 Boom economy voorbij.');},evt.duration*1000);}
+  else if(evt.effect==='strike'){S.activeEvents.strike=true;setTimeout(()=>{delete S.activeEvents.strike;showToast('✅ Staking voorbij!');},evt.duration*1000);}
+  else if(evt.effect==='taxaudit'){const fine=Math.min(S.money*0.1,200+Math.random()*800);S.money=Math.max(0,S.money-fine);showToast('🧾 Kleine boete van '+fmt(fine)+'!');}
+  else if(evt.effect==='subsidy'){const gift=1000+Math.random()*9000;S.money+=gift;showToast('🏛️ Subsidie ontvangen: +'+fmt(gift)+'!');}
+  else if(evt.effect==='bullrun'){STOCKS.forEach(s=>{S.stockPrices[s.id]*=1.30;});setTimeout(()=>{showToast('📉 Bull run voorbij.');},evt.duration*1000);}
+  else if(evt.effect==='crash'){STOCKS.forEach(s=>{S.stockPrices[s.id]*=0.65;});setTimeout(()=>{showToast('📈 Markt herstelt langzaam.');},evt.duration*1000);}
+  updateHUD();renderCity();
+}
+
+function tickStocks(){STOCKS.forEach(s=>{const cur=S.stockPrices[s.id];const drift=(s.basePrice-cur)*0.015;const noise=(Math.random()-.5)*cur*0.05;S.stockPrices[s.id]=Math.max(s.basePrice*0.2,Math.round((cur+drift+noise)*100)/100);const h=S.stockHistory[s.id];h.push(S.stockPrices[s.id]);if(h.length>80)h.shift();});}
+
+// Tick elke 500ms = 0.5 seconde per tick
+setInterval(()=>{
+  tickCount++;
+  const DT=0.5;
+  const gross=getTotalIncome();const div=getDividend();const tax=gross*S.taxRate;const wc=getWorkerCost();const lc=getLoanCost();
+  S.money+=(gross-tax-wc-lc+div)*DT;S.totalDividendEarned+=div*DT;
+  // Leningen
+  S.loans.forEach(l=>{l.remaining=Math.max(0,l.remaining-l.ratePerSec*DT);});S.loans=S.loans.filter(l=>l.remaining>0);
+  // Belasting flash elke 30 ticks (~15 sec)
+  if(tickCount%30===0&&gross>0){const f=document.getElementById('tax-flash');f.textContent='🧾 Belasting: -'+fmt(tax*DT*30);f.classList.add('show');setTimeout(()=>f.classList.remove('show'),2500);}
+  // Belasting stijgt langzaam
+  S.taxRate=Math.min(0.40,0.15+Math.max(0,gross-10)*0.0005);
+  // Stocks elke 2 ticks (~1 sec)
+  if(tickCount%2===0)tickStocks();
+  // Random event: 1x per minuut max (120 ticks)
+  if(tickCount%120===0)triggerEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
+  // Nieuws elke 60 ticks (~30 sec)
+  if(tickCount%60===0)document.getElementById('news-ticker-text').textContent=NEWS[Math.floor(Math.random()*NEWS.length)]+'   ·   '+NEWS.slice(0,3).join('   ·   ');
+  updateHUD();
+  const active=document.querySelector('.page.active');
+  if(active){const id=active.id;if(id==='tab-stad')renderCity();else if(id==='tab-bedrijven')renderMyBiz();else if(id==='tab-investeren')renderInvest();else if(id==='tab-leningen')renderLoans();}
+},500);
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='investeren')renderInvest();else if(name==='bedrijven')renderMyBiz();else if(name==='stad')renderCity();else if(name==='leningen')renderLoans();
+}
+
+let toastTimer=null;
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
+
+renderCity();renderLoans();updateHUD();
+</script>
+</body>
+</html>
